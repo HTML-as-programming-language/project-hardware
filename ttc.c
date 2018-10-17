@@ -76,8 +76,11 @@ void SCH_Init_T1(void)
 	{
 		SCH_Delete_Task(i);
 	}
-	OCR1A = (uint16_t)625;
-	TCCR1B = (1 << CS12) | (1 << WGM12);
+	// Breadboard versie
+	// OCR1A = (uint16_t)625;
+	// TCCR1B = (1 << CS12) | (1 << WGM12);
+	OCR1A = (uint16_t)1300;
+	TCCR1B = (1 << CS11) | (1 << WGM12);
 	TIMSK1 = 1 << OCIE1A;
 }
 

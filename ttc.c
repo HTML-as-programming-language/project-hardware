@@ -124,6 +124,21 @@ void update_leds()
 	PORTD ^= 0xFF;
 }
 
+void screenup() {
+	//code om het scherm omhoog te draaien
+}
+
+void screendown(){
+	//code om het zonnescherm naar beneden te draaien
+}
+
+void readSensors() {
+	//leest de sensoren en schrijft naar globale variabelen
+}
+
+void sendData() {
+	//verzend data van sensoren naar de centrale
+}
 
 int main()
 {

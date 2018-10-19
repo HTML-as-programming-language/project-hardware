@@ -1,9 +1,13 @@
-#ifndef F_CPU
-#define F_CPU 16000000UL
-#endif
+#define F_CPU 16E6
 #include "ttc.h"
 #include <avr/io.h>
+#include <stdlib.h>
+#include <avr/sfr_defs.h>
 #include <avr/interrupt.h>
+#include <util/delay.h>
+#define UBBRVAL 103
+#include "serial.c"
+//#define UBBRVAL 103 //set baudrate to 9600
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
 void SCH_Dispatch_Tasks(void)
@@ -142,7 +146,8 @@ void sendData() {
 
 int main()
 {
-
+	uart_init();
+	tx(0x24);
 	DDRD = 1 << 1;
 	DDRB = 0;
 	SCH_Init_T1();

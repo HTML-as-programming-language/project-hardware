@@ -5,9 +5,8 @@
 #include <avr/sfr_defs.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#define UBBRVAL 103
+#define UBBRVAL 103 //set baudrate to 9600
 #include "serial.c"
-//#define UBBRVAL 103 //set baudrate to 9600
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
 void SCH_Dispatch_Tasks(void)
@@ -83,8 +82,8 @@ void SCH_Init_T1(void)
 	// Breadboard versie
 	// OCR1A = (uint16_t)625;
 	// TCCR1B = (1 << CS12) | (1 << WGM12);
-	OCR1A = (uint16_t)1300;
-	TCCR1B = (1 << CS11) | (1 << WGM12);
+	OCR1A = (uint16_t)625;
+	TCCR1B = (1 << CS12) | (1 << WGM12);
 	TIMSK1 = 1 << OCIE1A;
 }
 
@@ -144,14 +143,18 @@ void sendData() {
 	//verzend data van sensoren naar de centrale
 }
 
+void sendString() {
+	txChar("Hello World");
+}
+
 int main()
 {
 	uart_init();
-	tx(0x24);
 	DDRD = 1 << 1;
 	DDRB = 0;
 	SCH_Init_T1();
 	SCH_Add_Task(update_leds, 0, 50);
+	SCH_Add_Task(sendString, 0, 200);
 	SCH_Start();
 	while (1)
 	{

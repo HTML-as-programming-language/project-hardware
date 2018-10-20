@@ -1,0 +1,4 @@
+Inputs:
+A0:    Temperatuursensor
+A1:    Lichtsensor
+A2:    Luchtvochtigheid Sensor

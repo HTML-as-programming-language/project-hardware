@@ -1,4 +1,7 @@
 #include <avr/io.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <avr/sfr_defs.h>
 #include <avr/interrupt.h>
 #include "analog.h"
 #include <avr/eeprom.h>
@@ -161,6 +164,18 @@ void initSensor()
 	tx(0x00);
 }
 
+int tempSensor() {
+	return(adc_read(0)); //leest de temperatuur op pin A0
+}
+
+int lighSensor() {
+	return(adc_read(1)); //leest de lichtintensiteid op pin A1
+}
+
+int HumiSensor() {
+	return(adc_read(2)); //leest de luchtvochtigheid op pin A2
+}
+
 void sendString()
 {
 	txChar("Hello World");
@@ -211,6 +226,7 @@ int main()
 	uart_init();
 	DDRD = 1 << 1;
 	DDRB = 0;
+
 	adc_init();
 	SCH_Init_T1();
 
@@ -218,6 +234,7 @@ int main()
 	/* SCH_Add_Task(&sendData, 10, 50); */
 	/* SCH_Add_Task(&sensorTest, 0, 100); */
 	SCH_Add_Task(&testReboot, 0, 100);
+
 
 	SCH_Start();
 	while (1)

@@ -163,17 +163,21 @@ void initSensor()
 	tx(0x00);
 }
 
+int tempSensor() {
+	return(adc_read(0)); //leest de temperatuur op pin A0
+}
+
+int lighSensor() {
+	return(adc_read(1)); //leest de lichtintensiteid op pin A1
+}
+
+int HumiSensor() {
+	return(adc_read(2)); //leest de luchtvochtigheid op pin A2
+}
+
 void sendString()
 {
 	txChar("Hello World");
-}
-
-void sensorTest() {
-	int x = adc_read(0);
-	char y[5]; //maakt een char array
-	sprintf(y, "%x", x);
-	txChar(y);
-	tx(' ');
 }
 
 int main()
@@ -181,12 +185,11 @@ int main()
 	uart_init();
 	DDRD = 1 << 1;
 	DDRB = 0;
-  adc_init();
+  	adc_init();
 	SCH_Init_T1();
   
-	SCH_Add_Task(&initSensor, 0, 0);
-	SCH_Add_Task(&sendData, 10, 50);
-	SCH_Add_Task(sensorTest, 0, 100);
+	//SCH_Add_Task(&initSensor, 0, 0);
+	//SCH_Add_Task(&sendData, 10, 50);
 
 	SCH_Start();
 	while (1)

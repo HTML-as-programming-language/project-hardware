@@ -6,8 +6,8 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #define UBBRVAL 103 //set baudrate to 9600
-#include "serial.c"
 #include "analog.h"
+#include "serial.h"
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
 void SCH_Dispatch_Tasks(void)
@@ -81,8 +81,8 @@ void SCH_Init_T1(void)
 		SCH_Delete_Task(i);
 	}
 	// Breadboard versie
-	// OCR1A = (uint16_t)625;
-	// TCCR1B = (1 << CS12) | (1 << WGM12);
+	// OCR1A = (uint16_t)1300;
+	// TCCR1B = (1 << CS11) | (1 << WGM12);
 	OCR1A = (uint16_t)625;
 	TCCR1B = (1 << CS12) | (1 << WGM12);
 	TIMSK1 = 1 << OCIE1A;

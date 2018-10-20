@@ -1,13 +1,16 @@
-#define F_CPU 16E6
-#include "ttc.h"
 #include <avr/io.h>
-#include <stdlib.h>
-#include <avr/sfr_defs.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
-#define UBBRVAL 103 //set baudrate to 9600
 #include "analog.h"
+
+#define F_CPU 16E6
+#define FOSC 16E6 // Clock Speed
+#define BAUD 9600
+#define UBBRVAL FOSC/16/BAUD-1
+
+#include "ttc.h"
 #include "serial.h"
+
+enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
 void SCH_Dispatch_Tasks(void)
@@ -80,11 +83,18 @@ void SCH_Init_T1(void)
 	{
 		SCH_Delete_Task(i);
 	}
-	// Breadboard versie
-	// OCR1A = (uint16_t)1300;
-	// TCCR1B = (1 << CS11) | (1 << WGM12);
-	OCR1A = (uint16_t)625;
-	TCCR1B = (1 << CS12) | (1 << WGM12);
+
+	if (F_CPU == 16E6)
+	{
+		OCR1A = (uint16_t)625;
+		TCCR1B = (1 << CS12) | (1 << WGM12);
+	}
+	else
+	{
+		OCR1A = (uint16_t)1300;
+		TCCR1B = (1 << CS11) | (1 << WGM12);
+	}
+
 	TIMSK1 = 1 << OCIE1A;
 }
 
@@ -124,24 +134,35 @@ ISR(TIMER1_COMPA_vect)
 
 void update_leds()
 {
-
 	PORTD ^= 0xFF;
 }
 
-void screenup() {
-	//code om het scherm omhoog te draaien
+void startPacket()
+{
+	tx(0xFF);
+	tx(0xFF);
+	tx(0x00);
 }
 
-void screendown(){
-	//code om het zonnescherm naar beneden te draaien
+void sendData()
+{
+	startPacket();
+	tx(temp);
+	tx(0x00);
+	tx(0x10);
 }
 
-void readSensors() {
-	//leest de sensoren en schrijft naar globale variabelen
+void initSensor()
+{
+	startPacket();
+	tx(init);
+	tx(0x00);
+	tx(0x00);
 }
 
-void sendData() {
-	//verzend data van sensoren naar de centrale
+void sendString()
+{
+	txChar("Hello World");
 }
 
 void sensorTest() {
@@ -157,14 +178,15 @@ void sensorTest() {
 int main()
 {
 	uart_init();
-
-	adc_init();
-
-	DDRD = 1 << 2;
+	DDRD = 1 << 1;
 	DDRB = 0;
+  adc_init();
 	SCH_Init_T1();
-	SCH_Add_Task(update_leds, 0, 50);
+  
+	SCH_Add_Task(&initSensor, 0, 0);
+	SCH_Add_Task(&sendData, 10, 50);
 	SCH_Add_Task(sensorTest, 0, 100);
+
 	SCH_Start();
 	while (1)
 	{

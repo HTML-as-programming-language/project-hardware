@@ -1,6 +1,7 @@
 #define F_CPU 16E6
 #include "ttc.h"
 #include <avr/io.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <avr/sfr_defs.h>
 #include <avr/interrupt.h>
@@ -146,12 +147,10 @@ void sendData() {
 
 void sensorTest() {
 	int x = adc_read(0);
-	if (x > 0x00ff) {
-		txChar("High");
-	}
-	else {
-		txChar("Low");
-	}
+	char y[5]; //maakt een char array
+	sprintf(y, "%x", x);
+	txChar(y);
+	tx(' ');
 }
 
 int main()

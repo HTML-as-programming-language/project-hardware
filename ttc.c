@@ -1,6 +1,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "analog.h"
+#include <avr/eeprom.h>
 
 #define F_CPU 16E6
 #define FOSC 16E6 // Clock Speed
@@ -175,17 +176,48 @@ void sensorTest() {
 	}
 }
 
+uint8_t EEMEM eeprombyte=0x10;
+uint16_t EEMEM eepromword=0x5555;
+uint8_t EEMEM eepromstring[5]={"Test\0"};
+uint16_t reboots EEMEM = 0;
+
+void incReboot()
+{
+	uint16_t reboot_count = eeprom_read_word(&reboots);
+	reboot_count++;
+	eeprom_write_word(&reboots, reboot_count);
+}
+
+void eepromTest()
+{
+	uint8_t RAMbyte;
+	uint16_t RAMword;
+	uint8_t RAMstring[5];
+	RAMbyte = eeprom_read_byte(&eeprombyte);
+	RAMword = eeprom_read_word(&eepromword);
+	eeprom_read_block ((void *)&RAMstring, (const void *)&eepromstring,5);
+}
+
+void testReboot()
+{
+	uint16_t reboot_count;
+	reboot_count = eeprom_read_word(&reboots);
+	tx(reboot_count);
+}
+
 int main()
 {
+	incReboot();
 	uart_init();
 	DDRD = 1 << 1;
 	DDRB = 0;
-  adc_init();
+	adc_init();
 	SCH_Init_T1();
-  
-	SCH_Add_Task(&initSensor, 0, 0);
-	SCH_Add_Task(&sendData, 10, 50);
-	SCH_Add_Task(sensorTest, 0, 100);
+
+	/* SCH_Add_Task(&initSensor, 0, 0); */
+	/* SCH_Add_Task(&sendData, 10, 50); */
+	/* SCH_Add_Task(&sensorTest, 0, 100); */
+	SCH_Add_Task(&testReboot, 0, 100);
 
 	SCH_Start();
 	while (1)

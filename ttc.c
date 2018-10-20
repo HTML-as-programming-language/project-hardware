@@ -7,6 +7,7 @@
 #include <util/delay.h>
 #define UBBRVAL 103 //set baudrate to 9600
 #include "serial.c"
+#include "analog.h"
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
 void SCH_Dispatch_Tasks(void)
@@ -143,18 +144,27 @@ void sendData() {
 	//verzend data van sensoren naar de centrale
 }
 
-void sendString() {
-	txChar("Hello World");
+void sensorTest() {
+	int x = adc_read(0);
+	if (x > 0x00ff) {
+		txChar("High");
+	}
+	else {
+		txChar("Low");
+	}
 }
 
 int main()
 {
 	uart_init();
-	DDRD = 1 << 1;
+
+	adc_init();
+
+	DDRD = 1 << 2;
 	DDRB = 0;
 	SCH_Init_T1();
 	SCH_Add_Task(update_leds, 0, 50);
-	SCH_Add_Task(sendString, 0, 200);
+	SCH_Add_Task(sensorTest, 0, 100);
 	SCH_Start();
 	while (1)
 	{

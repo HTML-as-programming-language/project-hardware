@@ -1,11 +1,12 @@
 #include <avr/io.h>
-#include <stdlib.h>
 #include <avr/interrupt.h>
+#include "analog.h"
 
 #define F_CPU 16E6
 #define FOSC 16E6 // Clock Speed
 #define BAUD 9600
 #define UBBRVAL FOSC/16/BAUD-1
+
 #include "ttc.h"
 #include "serial.h"
 
@@ -82,6 +83,7 @@ void SCH_Init_T1(void)
 	{
 		SCH_Delete_Task(i);
 	}
+
 	if (F_CPU == 16E6)
 	{
 		OCR1A = (uint16_t)625;
@@ -92,6 +94,7 @@ void SCH_Init_T1(void)
 		OCR1A = (uint16_t)1300;
 		TCCR1B = (1 << CS11) | (1 << WGM12);
 	}
+
 	TIMSK1 = 1 << OCIE1A;
 }
 
@@ -162,14 +165,28 @@ void sendString()
 	txChar("Hello World");
 }
 
+void sensorTest() {
+	int x = adc_read(0);
+	if (x > 0x00ff) {
+		txChar("High");
+	}
+	else {
+		txChar("Low");
+	}
+}
+
 int main()
 {
 	uart_init();
 	DDRD = 1 << 1;
 	DDRB = 0;
+  adc_init();
 	SCH_Init_T1();
+  
 	SCH_Add_Task(&initSensor, 0, 0);
 	SCH_Add_Task(&sendData, 10, 50);
+	SCH_Add_Task(sensorTest, 0, 100);
+
 	SCH_Start();
 	while (1)
 	{

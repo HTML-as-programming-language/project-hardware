@@ -10,10 +10,17 @@ void tx(uint8_t data) {
 	UDR0 = data;
 }
 
-void txChar(uint8_t message[]) {
-	for (int c = 0; message[c] != 0; c++)
-		tx(message[c]);
-
+void txChar(char message[]) {
+	int i = 0;
+	while(1) {
+		if (message[i] != 0x00) {
+			tx(message[i]);
+			i++;
+		}
+		else {
+			return;
+		}
+	}
 }
 
 uint8_t rx() {

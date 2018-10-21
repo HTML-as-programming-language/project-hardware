@@ -14,6 +14,10 @@
 #include "ttc.h"
 #include "serial.h"
 
+int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden
+int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
+uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
+
 enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
@@ -181,14 +185,19 @@ void sendString()
 	txChar("Hello World");
 }
 
-void sensorTest() {
-	int x = adc_read(0);
-	if (x > 0x00ff) {
-		txChar("High");
+void checkScreenPos() {
+	int temp = tempSensor();
+	// een paar berekeningen om de temp in tienden van graden te te krijgen
+	if (temp <= tempOff) {
+		setScreen(0); //draai het scherm omhoog
 	}
-	else {
-		txChar("Low");
+	if (temp >= tempOn) {
+		setScreen(1); // draai het scherm naar beneden
 	}
+}
+
+void setScreen(uint8_t pos) {
+	// veranderd de positie van het zonnescherm. pos: 1 = omlaag, 0 = omhoog
 }
 
 uint8_t EEMEM eeprombyte=0x10;

@@ -186,18 +186,20 @@ void sendString()
 }
 
 void checkScreenPos() {
-	int temp = tempSensor();
-	// een paar berekeningen om de temp in tienden van graden te te krijgen
+	float temp = tempSensor();
+	// Adafruit over de TMP36:
+	// Temp in C = (input(mv) - 500) / 10
+	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur 
 	if (temp <= tempOff) {
-		setScreen(0); //draai het scherm omhoog
+		setScreen(0x00); //draai het scherm omhoog
 	}
 	if (temp >= tempOn) {
-		setScreen(1); // draai het scherm naar beneden
+		setScreen(0xff); // draai het scherm naar beneden
 	}
 }
 
 void setScreen(uint8_t pos) {
-	// veranderd de positie van het zonnescherm. pos: 1 = omlaag, 0 = omhoog
+	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
 }
 
 uint8_t EEMEM eeprombyte=0x10;

@@ -213,6 +213,22 @@ void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft h
 
 handleRx() {
 	//leest lastMessage en neemt de bijbehorede acties
+	int command = (lastMessage % 0x1000); //het commando (bovenste 16 bits)
+	int payload = (lastMessage - command); //de payload van het bericht
+
+	switch(command) {
+		case 11:
+			tempOn = payload;
+			break;
+		case 12:
+			tempOff = payload;
+			break;
+		case 51:
+			setScreen(0x255);
+			break;
+		case 52:
+			setScreen(0x00);
+	}
 }
 
 void checkScreenPos() {

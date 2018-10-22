@@ -18,6 +18,8 @@ int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden ge
 int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
 uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
 
+uint32_t lastMessage = 0; //het laaste beinnegekomen bericht
+
 enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
@@ -191,6 +193,26 @@ int getTemp() { //returnt de temperatuur in tienden van graden C
 	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur
 	int tempC = (temp * 10);
 	return(tempC);
+}
+
+void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
+	if (UCSR0A && RXC0) {
+		//er is een bericht ontvangen
+		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
+		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
+		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+			uint32_t message = (rx() * 0x1000000);
+			message += (rx() * 0x10000);
+			message += (rx() * 0x100);
+			message += rx();
+			lastMessage = message;
+			handleRx();
+		}
+	}
+}
+
+handleRx() {
+	//leest lastMessage en neemt de bijbehorede acties
 }
 
 void checkScreenPos() {

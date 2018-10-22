@@ -224,7 +224,7 @@ handleRx() {
 			tempOff = payload;
 			break;
 		case 51:
-			setScreen(0x255);
+			setScreen(0xff);
 			break;
 		case 52:
 			setScreen(0x00);

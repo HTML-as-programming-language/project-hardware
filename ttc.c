@@ -155,9 +155,8 @@ void startPacket()
 void sendData()
 {
 	startPacket();
-	tx(temp);
-	tx(0x00);
-	tx(0x10);
+	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
+	txInt(getTemp()); //geeft de temperatuur door
 }
 
 void initSensor()
@@ -185,11 +184,17 @@ void sendString()
 	txChar("Hello World");
 }
 
-void checkScreenPos() {
+int getTemp() { //returnt de temperatuur in tienden van graden C
 	float temp = tempSensor();
 	// Adafruit over de TMP36:
 	// Temp in C = (input(mv) - 500) / 10
-	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur 
+	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur
+	int tempC = (temp * 10);
+	return(tempC);
+}
+
+void checkScreenPos() {
+	int temp = getTemp();
 	if (temp <= tempOff) {
 		setScreen(0x00); //draai het scherm omhoog
 	}

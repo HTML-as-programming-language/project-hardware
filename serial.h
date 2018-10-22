@@ -16,6 +16,14 @@ void txChar(uint8_t message[]) {
 
 }
 
+void txInt(int message) {
+	//verzend een int (16 bit) in twee packets van 8 bits
+	int a = (message % 0x10000);
+	int b = (message - a);
+	tx(a);
+	tx(b);
+}
+
 uint8_t rx() {
 	loop_until_bit_is_set(UCSR0A, RXC0);
 	return UDR0;

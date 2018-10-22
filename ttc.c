@@ -213,8 +213,8 @@ void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft h
 
 handleRx() {
 	//leest lastMessage en neemt de bijbehorede acties
-	int command = (lastMessage % 0x1000); //het commando (bovenste 16 bits)
-	int payload = (lastMessage - command); //de payload van het bericht
+	int command = (lastMessage / 0x10000); //het commando (bovenste 16 bits)
+	int payload = (lastMessage % 0x10000); //de payload van het bericht
 
 	switch(command) {
 		case 11:

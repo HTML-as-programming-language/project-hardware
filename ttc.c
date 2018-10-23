@@ -171,8 +171,8 @@ void update_leds()
 
 void startPacket()
 {
-	tx(0xAB);
-	tx(0xCD);
+	tx(0xff);
+	tx(0xff);
 	tx(0x00);
 }
 

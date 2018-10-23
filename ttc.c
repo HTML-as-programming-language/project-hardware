@@ -313,6 +313,25 @@ void ultrasoon()
 	}
 }
 
+union u_type
+{
+  uint32_t IntVar;
+  unsigned char Bytes[4];
+}
+ txtestbyte;
+
+void txtest()
+{
+	txtestbyte.Bytes[0] = rx();
+	txtestbyte.Bytes[1] = rx();
+	txtestbyte.Bytes[2] = rx();
+	txtestbyte.Bytes[3] = rx();
+	tx(txtestbyte.Bytes[0]);
+	tx(txtestbyte.Bytes[1]);
+	tx(txtestbyte.Bytes[2]);
+	tx(txtestbyte.Bytes[3]);
+}
+
 int main()
 {
 	SPH = (RAMEND & 0xFF00) >> 8;
@@ -334,10 +353,10 @@ int main()
 
 	/* SCH_Add_Task(&initSensor, 0, 0); */
 	/* SCH_Add_Task(&sendData, 10, 50); */
-	SCH_Add_Task(&sensorTest, 0, 50);
+	/* SCH_Add_Task(&sensorTest, 0, 50); */
+	SCH_Add_Task(&txtest, 0, 50);
 	/* SCH_Add_Task(&update_leds, 0, 50); */
 	/* SCH_Add_Task(&ultrasoon, 0, 5); */
-	/* SCH_Add_Task(&sonar, 0, 50); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
 
 	SCH_Start();

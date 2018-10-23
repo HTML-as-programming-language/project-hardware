@@ -22,7 +22,10 @@ int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden ge
 int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
 uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
 
-uint32_t lastMessage = 0; //het laaste beinnegekomen bericht
+union {
+	uint32_t IntVar;
+	unsigned char Bytes[4];
+} lastMessage;
 
 enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
 
@@ -214,8 +217,8 @@ void setScreen(uint8_t pos) {
 
 void handleRx() {
 	//leest lastMessage en neemt de bijbehorede acties
-	int command = (lastMessage / 0x10000); //het commando (bovenste 16 bits)
-	int payload = (lastMessage % 0x10000); //de payload van het bericht
+	int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
+	int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
 
 	switch(command) {
 		case 11:
@@ -238,11 +241,10 @@ void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft h
 		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
 		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
 		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-			uint32_t message = (rx() * 0x1000000);
-			message += (rx() * 0x10000);
-			message += (rx() * 0x100);
-			message += rx();
-			lastMessage = message;
+			lastMessage.Bytes[0] = rx();
+			lastMessage.Bytes[1] = rx();
+			lastMessage.Bytes[2] = rx();
+			lastMessage.Bytes[3] = rx();
 			handleRx();
 		}
 	}

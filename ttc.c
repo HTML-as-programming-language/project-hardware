@@ -22,7 +22,10 @@ int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden ge
 int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
 uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
 
-uint32_t lastMessage = 0; //het laaste beinnegekomen bericht
+union {
+	uint32_t IntVar;
+	unsigned char Bytes[4];
+} lastMessage;
 
 enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
 
@@ -168,8 +171,8 @@ void update_leds()
 
 void startPacket()
 {
-	tx(0xFF);
-	tx(0xFF);
+	tx(0xAB);
+	tx(0xCD);
 	tx(0x00);
 }
 
@@ -193,19 +196,24 @@ void sensorTest()
 }
 
 int getTemp() { //returnt de temperatuur in tienden van graden C
-	float temp = adc_read(0);
+	float temp = (float)adc_read(0);
 	// Adafruit over de TMP36:
 	// Temp in C = (input(mv) - 500) / 10
-	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur
-	int tempC = (temp * 10);
+	temp = (temp * 5); // bereken temperatuur
+	temp /= 1024;
+	temp -= (temp - 0.5) * 1000;
+	int tempC = (int)temp;
 	return(tempC);
 }
 
 void sendData()
 {
+	union {int ValInt; unsigned char Bytes[2];} tempInt;
+	tempInt.ValInt = getTemp(); // meet de temperatuur
 	startPacket();
 	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
-	txInt(getTemp()); //geeft de temperatuur door
+	tx(tempInt.Bytes[0]); //geeft de temperatuur door
+	tx(tempInt.Bytes[1]);
 }
 
 void setScreen(uint8_t pos) {
@@ -214,8 +222,8 @@ void setScreen(uint8_t pos) {
 
 void handleRx() {
 	//leest lastMessage en neemt de bijbehorede acties
-	int command = (lastMessage % 0x1000); //het commando (bovenste 16 bits)
-	int payload = (lastMessage - command); //de payload van het bericht
+	int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
+	int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
 
 	switch(command) {
 		case 11:
@@ -231,21 +239,24 @@ void handleRx() {
 			setScreen(0x00);
 	}
 }
+union
+{
+  uint16_t IntVar;
+  unsigned char Bytes[2];
+}
+ firstInt;
 
 void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	if (UCSR0A && RXC0) {
-		//er is een bericht ontvangen
-		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
-		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-			uint32_t message = (rx() * 0x1000000);
-			message += (rx() * 0x10000);
-			message += (rx() * 0x100);
-			message += rx();
-			lastMessage = message;
+		firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
+		firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
+		if (firstInt.IntVar == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+			tx(0x11);
+			lastMessage.Bytes[0] = rx();
+			lastMessage.Bytes[1] = rx();
+			lastMessage.Bytes[2] = rx();
+			lastMessage.Bytes[3] = rx();
 			handleRx();
 		}
-	}
 }
 
 void checkScreenPos() {
@@ -352,9 +363,10 @@ int main()
 	SCH_Init_T1();
 
 	/* SCH_Add_Task(&initSensor, 0, 0); */
-	/* SCH_Add_Task(&sendData, 10, 50); */
+	SCH_Add_Task(&sendData, 10, 200);
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
-	SCH_Add_Task(&txtest, 0, 50);
+	/* SCH_Add_Task(&txtest, 0, 50); */
+	// SCH_Add_Task(&checkRx, 0, 50);
 	/* SCH_Add_Task(&update_leds, 0, 50); */
 	/* SCH_Add_Task(&ultrasoon, 0, 5); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */

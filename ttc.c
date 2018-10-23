@@ -234,20 +234,24 @@ void handleRx() {
 			setScreen(0x00);
 	}
 }
+union
+{
+  uint16_t IntVar;
+  unsigned char Bytes[2];
+}
+ firstInt;
 
 void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	if (UCSR0A && RXC0) {
-		//er is een bericht ontvangen
-		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
-		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+		firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
+		firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
+		if (firstInt.IntVar == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+			tx(0x11);
 			lastMessage.Bytes[0] = rx();
 			lastMessage.Bytes[1] = rx();
 			lastMessage.Bytes[2] = rx();
 			lastMessage.Bytes[3] = rx();
 			handleRx();
 		}
-	}
 }
 
 void checkScreenPos() {
@@ -356,7 +360,8 @@ int main()
 	/* SCH_Add_Task(&initSensor, 0, 0); */
 	/* SCH_Add_Task(&sendData, 10, 50); */
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
-	SCH_Add_Task(&txtest, 0, 50);
+	/* SCH_Add_Task(&txtest, 0, 50); */
+	SCH_Add_Task(&checkRx, 0, 50);
 	/* SCH_Add_Task(&update_leds, 0, 50); */
 	/* SCH_Add_Task(&ultrasoon, 0, 5); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */

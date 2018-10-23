@@ -236,7 +236,7 @@ void handleRx() {
 }
 
 void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	if (UCSR0A && RXC0) {
+	if (!(UCSR0A & (1<<UDRE0))) {
 		//er is een bericht ontvangen
 		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
 		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven

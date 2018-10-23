@@ -193,9 +193,11 @@ void sendString()
 	txChar("Hello World");
 }
 
-void sensorTest() {
+void sensorTest()
+{
 	uint8_t x = adc_read(0);
 	tx(x);
+}
 
 int getTemp() { //returnt de temperatuur in tienden van graden C
 	float temp = tempSensor();

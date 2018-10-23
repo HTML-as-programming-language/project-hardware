@@ -173,13 +173,6 @@ void startPacket()
 	tx(0x00);
 }
 
-void sendData()
-{
-	startPacket();
-	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
-	txInt(getTemp()); //geeft de temperatuur door
-}
-
 void initSensor()
 {
 	startPacket();
@@ -200,7 +193,7 @@ void sensorTest()
 }
 
 int getTemp() { //returnt de temperatuur in tienden van graden C
-	float temp = tempSensor();
+	float temp = adc_read(0);
 	// Adafruit over de TMP36:
 	// Temp in C = (input(mv) - 500) / 10
 	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur
@@ -208,23 +201,18 @@ int getTemp() { //returnt de temperatuur in tienden van graden C
 	return(tempC);
 }
 
-void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	if (UCSR0A && RXC0) {
-		//er is een bericht ontvangen
-		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
-		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-			uint32_t message = (rx() * 0x1000000);
-			message += (rx() * 0x10000);
-			message += (rx() * 0x100);
-			message += rx();
-			lastMessage = message;
-			handleRx();
-		}
-	}
+void sendData()
+{
+	startPacket();
+	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
+	txInt(getTemp()); //geeft de temperatuur door
 }
 
-handleRx() {
+void setScreen(uint8_t pos) {
+	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
+}
+
+void handleRx() {
 	//leest lastMessage en neemt de bijbehorede acties
 	int command = (lastMessage % 0x1000); //het commando (bovenste 16 bits)
 	int payload = (lastMessage - command); //de payload van het bericht
@@ -244,6 +232,22 @@ handleRx() {
 	}
 }
 
+void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
+	if (UCSR0A && RXC0) {
+		//er is een bericht ontvangen
+		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
+		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
+		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+			uint32_t message = (rx() * 0x1000000);
+			message += (rx() * 0x10000);
+			message += (rx() * 0x100);
+			message += rx();
+			lastMessage = message;
+			handleRx();
+		}
+	}
+}
+
 void checkScreenPos() {
 	int temp = getTemp();
 	if (temp <= tempOff) {
@@ -252,10 +256,6 @@ void checkScreenPos() {
 	if (temp >= tempOn) {
 		setScreen(0xff); // draai het scherm naar beneden
 	}
-}
-
-void setScreen(uint8_t pos) {
-	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
 }
 
 uint8_t EEMEM eeprombyte=0x10;
@@ -334,9 +334,9 @@ int main()
 
 	/* SCH_Add_Task(&initSensor, 0, 0); */
 	/* SCH_Add_Task(&sendData, 10, 50); */
-	/* SCH_Add_Task(&sensorTest, 0, 50); */
-	SCH_Add_Task(&update_leds, 0, 50);
-	SCH_Add_Task(&ultrasoon, 0, 5);
+	SCH_Add_Task(&sensorTest, 0, 50);
+	/* SCH_Add_Task(&update_leds, 0, 50); */
+	/* SCH_Add_Task(&ultrasoon, 0, 5); */
 	/* SCH_Add_Task(&sonar, 0, 50); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
 

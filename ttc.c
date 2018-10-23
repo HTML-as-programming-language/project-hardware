@@ -18,6 +18,12 @@ volatile int centimeter = 0;
 #include "ttc.h"
 #include "serial.h"
 
+int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden
+int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
+uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
+
+uint32_t lastMessage = 0; //het laaste beinnegekomen bericht
+
 enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
@@ -170,9 +176,8 @@ void startPacket()
 void sendData()
 {
 	startPacket();
-	tx(temp);
-	tx(0x00);
-	tx(0x10);
+	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
+	txInt(getTemp()); //geeft de temperatuur door
 }
 
 void initSensor()
@@ -191,6 +196,64 @@ void sendString()
 void sensorTest() {
 	uint8_t x = adc_read(0);
 	tx(x);
+
+int getTemp() { //returnt de temperatuur in tienden van graden C
+	float temp = tempSensor();
+	// Adafruit over de TMP36:
+	// Temp in C = (input(mv) - 500) / 10
+	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur
+	int tempC = (temp * 10);
+	return(tempC);
+}
+
+void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
+	if (UCSR0A && RXC0) {
+		//er is een bericht ontvangen
+		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
+		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
+		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+			uint32_t message = (rx() * 0x1000000);
+			message += (rx() * 0x10000);
+			message += (rx() * 0x100);
+			message += rx();
+			lastMessage = message;
+			handleRx();
+		}
+	}
+}
+
+handleRx() {
+	//leest lastMessage en neemt de bijbehorede acties
+	int command = (lastMessage % 0x1000); //het commando (bovenste 16 bits)
+	int payload = (lastMessage - command); //de payload van het bericht
+
+	switch(command) {
+		case 11:
+			tempOn = payload;
+			break;
+		case 12:
+			tempOff = payload;
+			break;
+		case 51:
+			setScreen(0xff);
+			break;
+		case 52:
+			setScreen(0x00);
+	}
+}
+
+void checkScreenPos() {
+	int temp = getTemp();
+	if (temp <= tempOff) {
+		setScreen(0x00); //draai het scherm omhoog
+	}
+	if (temp >= tempOn) {
+		setScreen(0xff); // draai het scherm naar beneden
+	}
+}
+
+void setScreen(uint8_t pos) {
+	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
 }
 
 uint8_t EEMEM eeprombyte=0x10;

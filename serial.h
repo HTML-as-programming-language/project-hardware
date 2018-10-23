@@ -5,8 +5,9 @@ void uart_init(){
 	UCSR0C |= _BV(UCSZ00) | _BV(UCSZ01);
 }
 
-void tx(uint8_t data) {
-	loop_until_bit_is_set(UCSR0A, UDRE0);
+void tx( unsigned char data )
+{
+	while ( !( UCSR0A & (1<<UDRE0)) );
 	UDR0 = data;
 }
 
@@ -24,7 +25,8 @@ void txInt(int message) {
 	tx(b);
 }
 
-uint8_t rx() {
-	loop_until_bit_is_set(UCSR0A, RXC0);
+unsigned char rx( void )
+{
+	while ( !(UCSR0A & (1<<RXC0)) );
 	return UDR0;
 }

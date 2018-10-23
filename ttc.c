@@ -1,15 +1,19 @@
+#define F_CPU 16E6
 #include <avr/io.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <avr/sfr_defs.h>
 #include <avr/interrupt.h>
 #include "analog.h"
 #include <avr/eeprom.h>
+#include <util/delay.h>
 
-#define F_CPU 16E6
-#define FOSC 16E6 // Clock Speed
 #define BAUD 9600
-#define UBBRVAL FOSC/16/BAUD-1
+#define UBBRVAL F_CPU/16/BAUD-1
+
+#define LEDPin PIND5
+#define TrigPin PIND3
+#define EchoPin PIND2
+
+volatile uint8_t pingState = 0;
+volatile int centimeter = 0;
 
 #include "ttc.h"
 #include "serial.h"
@@ -94,18 +98,10 @@ void SCH_Init_T1(void)
 		SCH_Delete_Task(i);
 	}
 
-	if (F_CPU == 16E6)
-	{
-		OCR1A = (uint16_t)625;
-		TCCR1B = (1 << CS12) | (1 << WGM12);
-	}
-	else
-	{
-		OCR1A = (uint16_t)1300;
-		TCCR1B = (1 << CS11) | (1 << WGM12);
-	}
-
-	TIMSK1 = 1 << OCIE1A;
+	OCR0A = (uint8_t)625;
+	TCCR0B = (1 << CS02)|(1 << CS00);
+	TCCR0A = (1 << WGM01);
+	TIMSK0 = 1 << OCIE0A;
 }
 
 void SCH_Start(void)
@@ -113,7 +109,30 @@ void SCH_Start(void)
 	sei();
 }
 
-ISR(TIMER1_COMPA_vect)
+ISR(PCINT2_vect)
+{
+	if(PIND & (1<<EchoPin))
+	{
+		TCNT1 = 0;
+		TCCR1B |= (1<<CS11);
+	}
+
+	else
+	{
+		TCCR1B &= ~(1<<CS11);
+		centimeter = TCNT1/58/2;
+		pingState = 2;
+	}
+}
+
+ISR(TIMER1_OVF_vect)
+{
+	TCCR1B &= ~(1<<CS10);
+	centimeter = -1;
+	pingState = 2;
+}
+
+ISR(TIMER0_COMPA_vect)
 {
 	unsigned char Index;
 	for(Index = 0; Index < SCH_MAX_TASKS; Index++)
@@ -144,7 +163,7 @@ ISR(TIMER1_COMPA_vect)
 
 void update_leds()
 {
-	PORTD ^= 0xFF;
+	PORTB ^= 0x1;
 }
 
 void startPacket()
@@ -152,13 +171,6 @@ void startPacket()
 	tx(0xFF);
 	tx(0xFF);
 	tx(0x00);
-}
-
-void sendData()
-{
-	startPacket();
-	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
-	txInt(getTemp()); //geeft de temperatuur door
 }
 
 void initSensor()
@@ -169,25 +181,19 @@ void initSensor()
 	tx(0x00);
 }
 
-int tempSensor() {
-	return(adc_read(0)); //leest de temperatuur op pin A0
-}
-
-int lighSensor() {
-	return(adc_read(1)); //leest de lichtintensiteid op pin A1
-}
-
-int HumiSensor() {
-	return(adc_read(2)); //leest de luchtvochtigheid op pin A2
-}
-
 void sendString()
 {
 	txChar("Hello World");
 }
 
+void sensorTest()
+{
+	uint8_t x = adc_read(0);
+	tx(x);
+}
+
 int getTemp() { //returnt de temperatuur in tienden van graden C
-	float temp = tempSensor();
+	float temp = adc_read(0);
 	// Adafruit over de TMP36:
 	// Temp in C = (input(mv) - 500) / 10
 	temp = (((temp * 5 / 1024) - 0.5) * 100); // bereken temperatuur
@@ -195,23 +201,18 @@ int getTemp() { //returnt de temperatuur in tienden van graden C
 	return(tempC);
 }
 
-void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	if (UCSR0A && RXC0) {
-		//er is een bericht ontvangen
-		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
-		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-			uint32_t message = (rx() * 0x1000000);
-			message += (rx() * 0x10000);
-			message += (rx() * 0x100);
-			message += rx();
-			lastMessage = message;
-			handleRx();
-		}
-	}
+void sendData()
+{
+	startPacket();
+	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
+	txInt(getTemp()); //geeft de temperatuur door
 }
 
-handleRx() {
+void setScreen(uint8_t pos) {
+	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
+}
+
+void handleRx() {
 	//leest lastMessage en neemt de bijbehorede acties
 	int command = (lastMessage / 0x10000); //het commando (bovenste 16 bits)
 	int payload = (lastMessage % 0x10000); //de payload van het bericht
@@ -231,6 +232,22 @@ handleRx() {
 	}
 }
 
+void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
+	if (UCSR0A && RXC0) {
+		//er is een bericht ontvangen
+		int firstInt = (UDR0 * 0x100); //schrijft het bericht naar de bovenste helft van een int
+		firstInt += rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
+		if (firstInt == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+			uint32_t message = (rx() * 0x1000000);
+			message += (rx() * 0x10000);
+			message += (rx() * 0x100);
+			message += rx();
+			lastMessage = message;
+			handleRx();
+		}
+	}
+}
+
 void checkScreenPos() {
 	int temp = getTemp();
 	if (temp <= tempOff) {
@@ -239,10 +256,6 @@ void checkScreenPos() {
 	if (temp >= tempOn) {
 		setScreen(0xff); // draai het scherm naar beneden
 	}
-}
-
-void setScreen(uint8_t pos) {
-	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
 }
 
 uint8_t EEMEM eeprombyte=0x10;
@@ -274,21 +287,77 @@ void testReboot()
 	tx(reboot_count);
 }
 
+void ultrasoon()
+{
+	switch (pingState){
+		case 0:
+
+			PORTD &= ~(1<<TrigPin);
+			_delay_us(10);
+			PORTD |= (1<<TrigPin);
+			_delay_us(10);
+			PORTD &= ~(1<<TrigPin);
+			pingState++;
+			break;
+		case 1:
+			break;
+		case 2:
+			tx(0);
+			tx(centimeter);
+			pingState++;
+			break;
+		case 3:
+			_delay_us(300);
+			pingState = 0;
+			break;
+	}
+}
+
+union u_type
+{
+  uint32_t IntVar;
+  unsigned char Bytes[4];
+}
+ txtestbyte;
+
+void txtest()
+{
+	txtestbyte.Bytes[0] = rx();
+	txtestbyte.Bytes[1] = rx();
+	txtestbyte.Bytes[2] = rx();
+	txtestbyte.Bytes[3] = rx();
+	tx(txtestbyte.Bytes[0]);
+	tx(txtestbyte.Bytes[1]);
+	tx(txtestbyte.Bytes[2]);
+	tx(txtestbyte.Bytes[3]);
+}
+
 int main()
 {
+	SPH = (RAMEND & 0xFF00) >> 8;
+	SPL = (RAMEND & 0x00FF);
+
+	TCCR1B = (1<<CS10);
+	TIMSK1 = (1<<TOIE1);
+
+	PCICR = (1<<PCIE2);
+	PCMSK2 = (1<<PCINT18);
+
+	DDRD = (1<<TrigPin) | (1<<LEDPin);
+	TCNT1 = 0;
 	incReboot();
 	uart_init();
-	DDRD = 1 << 1;
-	DDRB = 0;
-
+	DDRB = 1 << 0;
 	adc_init();
 	SCH_Init_T1();
 
 	/* SCH_Add_Task(&initSensor, 0, 0); */
 	/* SCH_Add_Task(&sendData, 10, 50); */
-	/* SCH_Add_Task(&sensorTest, 0, 100); */
-	SCH_Add_Task(&testReboot, 0, 100);
-
+	/* SCH_Add_Task(&sensorTest, 0, 50); */
+	SCH_Add_Task(&txtest, 0, 50);
+	/* SCH_Add_Task(&update_leds, 0, 50); */
+	/* SCH_Add_Task(&ultrasoon, 0, 5); */
+	/* SCH_Add_Task(&testReboot, 0, 100); */
 
 	SCH_Start();
 	while (1)

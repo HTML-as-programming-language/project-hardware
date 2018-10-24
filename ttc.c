@@ -203,7 +203,7 @@ int getTemp()
 	double temperatuur = (double)sensorInput / 1024;   // vind het percentage van de input
 	temperatuur = temperatuur * 5;              // vermenigvuldig met 5V om het voltage te verkrijgen
 	temperatuur = temperatuur - 0.5;            // Haal de offset eraf
-	temperatuur = temperatuur * 1000;			// Converteer millivolt naar graden Celcius
+	temperatuur = temperatuur * 1000;			// Converteer millivolt naar tienden van graden Celcius
 	return(temperatuur);
 }
 

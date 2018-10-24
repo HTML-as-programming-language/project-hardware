@@ -195,37 +195,41 @@ void sensorTest()
 	tx(x);
 }
 
-int getTemp() { //returnt de temperatuur in tienden van graden C
-	float temp = (float)adc_read(0);
+int getTemp()
+{ //returnt de temperatuur in tienden van graden C
+	int sensorInput = adc_read(0);
 	// Adafruit over de TMP36:
 	// Temp in C = (input(mv) - 500) / 10
-	temp = (temp * 5); // bereken temperatuur
-	temp /= 1024;
-	temp -= (temp - 0.5) * 1000;
-	int tempC = (int)temp;
-	return(tempC);
+	double temperatuur = (double)sensorInput / 1024;   // vind het percentage van de input
+	temperatuur = temperatuur * 5;              // vermenigvuldig met 5V om het voltage te verkrijgen
+	temperatuur = temperatuur - 0.5;            // Haal de offset eraf
+	temperatuur = temperatuur * 1000;			// Converteer millivolt naar tienden van graden Celcius
+	return(temperatuur);
 }
 
 void sendData()
 {
-	union {int ValInt; unsigned char Bytes[2];} tempInt;
+	union {uint16_t ValInt; unsigned char Bytes[2];} tempInt;
 	tempInt.ValInt = getTemp(); // meet de temperatuur
 	startPacket();
 	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
-	tx(tempInt.Bytes[0]); //geeft de temperatuur door
-	tx(tempInt.Bytes[1]);
+	tx(tempInt.Bytes[1]); //geeft de temperatuur door
+	tx(tempInt.Bytes[0]);
 }
 
-void setScreen(uint8_t pos) {
+void setScreen(uint8_t pos)
+{
 	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
 }
 
-void handleRx() {
+void handleRx()
+{
 	//leest lastMessage en neemt de bijbehorede acties
 	int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
 	int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
 
-	switch(command) {
+	switch(command)
+	{
 		case 11:
 			tempOn = payload;
 			break;
@@ -241,30 +245,35 @@ void handleRx() {
 }
 union
 {
-  uint16_t IntVar;
-  unsigned char Bytes[2];
+	uint16_t IntVar;
+	unsigned char Bytes[2];
 }
- firstInt;
+firstInt;
 
-void checkRx() { //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-		firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
-		firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-		if (firstInt.IntVar == 0xffff) { //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-			tx(0x11);
-			lastMessage.Bytes[0] = rx();
-			lastMessage.Bytes[1] = rx();
-			lastMessage.Bytes[2] = rx();
-			lastMessage.Bytes[3] = rx();
-			handleRx();
-		}
+void checkRx()
+{ //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
+	firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
+	firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
+	if (firstInt.IntVar == 0xffff)
+	{ //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
+		tx(0x11);
+		lastMessage.Bytes[0] = rx();
+		lastMessage.Bytes[1] = rx();
+		lastMessage.Bytes[2] = rx();
+		lastMessage.Bytes[3] = rx();
+		handleRx();
+	}
 }
 
-void checkScreenPos() {
+void checkScreenPos()
+{
 	int temp = getTemp();
-	if (temp <= tempOff) {
+	if (temp <= tempOff)
+	{
 		setScreen(0x00); //draai het scherm omhoog
 	}
-	if (temp >= tempOn) {
+	else if (temp >= tempOn)
+	{
 		setScreen(0xff); // draai het scherm naar beneden
 	}
 }
@@ -300,7 +309,8 @@ void testReboot()
 
 void ultrasoon()
 {
-	switch (pingState){
+	switch (pingState)
+	{
 		case 0:
 
 			PORTD &= ~(1<<TrigPin);
@@ -326,10 +336,10 @@ void ultrasoon()
 
 union u_type
 {
-  uint32_t IntVar;
-  unsigned char Bytes[4];
+	uint32_t IntVar;
+	unsigned char Bytes[4];
 }
- txtestbyte;
+txtestbyte;
 
 void txtest()
 {
@@ -363,7 +373,7 @@ int main()
 	SCH_Init_T1();
 
 	/* SCH_Add_Task(&initSensor, 0, 0); */
-	SCH_Add_Task(&sendData, 10, 200);
+	SCH_Add_Task(&sendData, 0, 50);
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
 	/* SCH_Add_Task(&txtest, 0, 50); */
 	// SCH_Add_Task(&checkRx, 0, 50);

@@ -12,6 +12,9 @@
 #define TrigPin PIND3
 #define EchoPin PIND2
 
+#define TempSensorOffset 500.0 //offset van de sensor in mV
+#define TempSensorMultiplier 10 //scale factor in mV/C
+
 volatile uint8_t pingState = 0;
 volatile int centimeter = 0;
 
@@ -199,9 +202,10 @@ int getTemp() { //returnt de temperatuur in tienden van graden C
 	float temp = (float)adc_read(0);
 	// Adafruit over de TMP36:
 	// Temp in C = (input(mv) - 500) / 10
-	temp = (temp * 5); // bereken temperatuur
-	temp /= 1024;
-	temp -= (temp - 0.5) * 1000;
+	temp *= 0.004882812; //temp wordt nu weergegeven in mV
+	temp -= TempSensorOffset;
+	temp /= TempSensorMultiplier; //temp wordt nu weergegevn in graden C
+	temp *= 10; //temp wordt nu weergeven in tieden van graden C
 	int tempC = (int)temp;
 	return(tempC);
 }

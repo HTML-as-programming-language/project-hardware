@@ -290,33 +290,6 @@ void testReboot()
 	tx(reboot_count);
 }
 
-void ultrasoon()
-{
-	switch (pingState)
-	{
-		case 0:
-
-			PORTD &= ~(1<<TrigPin);
-			_delay_us(10);
-			PORTD |= (1<<TrigPin);
-			_delay_us(10);
-			PORTD &= ~(1<<TrigPin);
-			pingState++;
-			break;
-		case 1:
-			break;
-		case 2:
-			tx(0);
-			tx(centimeter);
-			pingState++;
-			break;
-		case 3:
-			_delay_us(300);
-			pingState = 0;
-			break;
-	}
-}
-
 union u_type
 {
 	uint32_t IntVar;
@@ -334,6 +307,10 @@ void txtest()
 	tx(txtestbyte.Bytes[1]);
 	tx(txtestbyte.Bytes[2]);
 	tx(txtestbyte.Bytes[3]);
+}
+
+void txLight() {
+	txInt(getLight());
 }
 
 int main()
@@ -356,13 +333,14 @@ int main()
 	SCH_Init_T1();
 
 	/* SCH_Add_Task(&initSensor, 0, 0); */
-	SCH_Add_Task(&sendData, 0, 50);
+	//SCH_Add_Task(&sendData, 0, 50);
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
 	/* SCH_Add_Task(&txtest, 0, 50); */
 	// SCH_Add_Task(&checkRx, 0, 50);
 	/* SCH_Add_Task(&update_leds, 0, 50); */
 	/* SCH_Add_Task(&ultrasoon, 0, 5); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
+	SCH_Add_Task(&txLight, 0, 100);
 
 	SCH_Start();
 	while (1)

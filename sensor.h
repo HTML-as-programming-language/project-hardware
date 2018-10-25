@@ -10,10 +10,18 @@ int getTemp()
 	return(temperatuur);
 }
 
-void sensorTest(unsigned byte ch) //test de sensor op de gegeven input pin
+int sensorTest(uint8_t pin) //test de sensor op de gegeven input pin
 {
-	uint8_t x = adc_read(0);
-	tx(x);
+	int x = adc_read(pin);
+	return x;
+}
+
+int getLight() { 
+	//returned de lichtintensiteit van een LDR in hele procenten
+	int sensorInput = adc_read(1);// LDR04 op pin A1
+	double perc = (double)sensorInput / 1024; //perc = het percentage van lichtintensiteid
+	perc = perc * 100;
+	return perc;
 }
 
 void ultrasoon()

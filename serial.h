@@ -19,10 +19,10 @@ void txChar(uint8_t message[]) {
 
 void txInt(int message) {
  	//verzend een int (16 bit) in twee packets van 8 bits
-	int a = (message / 0x100);
-	int b = (message % 0x100);
- 	tx(a);
-	tx(b);
+	union {uint16_t ValInt; unsigned char Bytes[2];} MessInt;
+	MessInt.ValInt = message;
+ 	tx(MessInt.Bytes[1]);
+	tx(MessInt.Bytes[0]);
 }
 
 unsigned char rx( void )

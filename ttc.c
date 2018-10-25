@@ -17,6 +17,7 @@ volatile int centimeter = 0;
 
 #include "ttc.h"
 #include "serial.h"
+#include "sensor.h"
 
 int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden
 int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
@@ -193,18 +194,6 @@ void sensorTest()
 {
 	uint8_t x = adc_read(0);
 	tx(x);
-}
-
-int getTemp()
-{ //returnt de temperatuur in tienden van graden C
-	int sensorInput = adc_read(0);
-	// Adafruit over de TMP36:
-	// Temp in C = (input(mv) - 500) / 10
-	double temperatuur = (double)sensorInput / 1024;   // vind het percentage van de input
-	temperatuur = temperatuur * 5;              // vermenigvuldig met 5V om het voltage te verkrijgen
-	temperatuur = temperatuur - 0.5;            // Haal de offset eraf
-	temperatuur = temperatuur * 1000;			// Converteer millivolt naar tienden van graden Celcius
-	return(temperatuur);
 }
 
 void sendData()

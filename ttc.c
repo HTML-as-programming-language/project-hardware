@@ -190,12 +190,6 @@ void sendString()
 	txChar("Hello World");
 }
 
-void sensorTest()
-{
-	uint8_t x = adc_read(0);
-	tx(x);
-}
-
 void sendData()
 {
 	union {uint16_t ValInt; unsigned char Bytes[2];} tempInt;

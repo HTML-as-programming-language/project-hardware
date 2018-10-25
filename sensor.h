@@ -15,3 +15,30 @@ void sensorTest(unsigned byte ch) //test de sensor op de gegeven input pin
 	uint8_t x = adc_read(0);
 	tx(x);
 }
+
+void ultrasoon()
+{
+	switch (pingState)
+	{
+		case 0:
+
+			PORTD &= ~(1<<TrigPin);
+			_delay_us(10);
+			PORTD |= (1<<TrigPin);
+			_delay_us(10);
+			PORTD &= ~(1<<TrigPin);
+			pingState++;
+			break;
+		case 1:
+			break;
+		case 2:
+			tx(0);
+			tx(centimeter);
+			pingState++;
+			break;
+		case 3:
+			_delay_us(300);
+			pingState = 0;
+			break;
+	}
+}

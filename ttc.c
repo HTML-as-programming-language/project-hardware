@@ -185,25 +185,24 @@ void sendData()
 }
 
 void handleRx()
-{                                                                                                                                                                                                                                                                          
-          //leest lastMessage en neemt de bijbehorede acties                                                                                                                                                                                                                 
-          int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
+{
+          //leest lastMessage en neemt de bijbehorede acties 
+          int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits
           int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
-                                                                                                                                                                                                                                                                             
           switch(command)
-          {                                                                                                                                                                                                                                                                  
-                  case 11:                                                                                                                                                                                                                                                   
+          {
+                  case 11: 
                           tempOn = payload;
-                          break;                                                                                                                                                                                                                                             
-                  case 12:                                                                                                                                                                                                                                                   
-                          tempOff = payload;                                                                                                                                                                                                                                 
-                          break;                                                                                                                                                                                                                                             
-                  case 51:                                                                                                                                                                                                                                                   
-                          setScreen(0xff);                                                                                                                                                                                                                                   
-                          break;                                                                                                                                                                                                                                             
-                  case 52:                                                                                                                                                                                                                                                   
-                          setScreen(0x00);                                                                                                                                                                                                                                   
-        }                                                                                                                                                                                                                                                                  
+                          break; 
+                  case 12: 
+                          tempOff = payload;
+                          break;
+                  case 51:  
+                          setScreen(0xff);
+                          break;  
+                  case 52:  
+                          setScreen(0x00);
+        }
  }
 
 void setScreen(uint8_t pos)

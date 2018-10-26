@@ -20,7 +20,8 @@ int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden g
 uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
 
 #include "ttc.h"
-#include "serial.h"
+#include "serialTx.h"
+#include "serialRx.h"
 #include "sensor.h"
 
 enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
@@ -183,27 +184,6 @@ void sendData()
 	tx(tempInt.Bytes[1]); //geeft de temperatuur door
 	tx(tempInt.Bytes[0]);
 }
-
-void handleRx()
-{
-          //leest lastMessage en neemt de bijbehorede acties 
-          int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits
-          int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
-          switch(command)
-          {
-                  case 11: 
-                          tempOn = payload;
-                          break; 
-                  case 12: 
-                          tempOff = payload;
-                          break;
-                  case 51:  
-                          setScreen(0xff);
-                          break;  
-                  case 52:  
-                          setScreen(0x00);
-        }
- }
 
 void setScreen(uint8_t pos)
 {

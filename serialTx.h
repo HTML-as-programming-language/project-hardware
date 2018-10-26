@@ -33,28 +33,6 @@ unsigned char rx( void )
 	return UDR0;
 }
 
-union
-{
-	uint16_t IntVar;
-	unsigned char Bytes[2];
-}
-firstInt;
-
-void checkRx()
-{ //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
-	firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-	if (firstInt.IntVar == 0xffff)
-	{ //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-		tx(0x11);
-		lastMessage.Bytes[0] = rx();
-		lastMessage.Bytes[1] = rx();
-		lastMessage.Bytes[2] = rx();
-		lastMessage.Bytes[3] = rx();
-		handleRx();
-	}
-}
-
 void sendString()
 {
 	txChar("Hello World");

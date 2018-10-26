@@ -17,6 +17,7 @@ volatile int centimeter = 0;
 
 #include "ttc.h"
 #include "serial.h"
+#include "sensor.h"
 
 int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden
 int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
@@ -189,24 +190,6 @@ void sendString()
 	txChar("Hello World");
 }
 
-void sensorTest()
-{
-	uint8_t x = adc_read(0);
-	tx(x);
-}
-
-int getTemp()
-{ //returnt de temperatuur in tienden van graden C
-	int sensorInput = adc_read(0);
-	// Adafruit over de TMP36:
-	// Temp in C = (input(mv) - 500) / 10
-	double temperatuur = (double)sensorInput / 1024;   // vind het percentage van de input
-	temperatuur = temperatuur * 5;              // vermenigvuldig met 5V om het voltage te verkrijgen
-	temperatuur = temperatuur - 0.5;            // Haal de offset eraf
-	temperatuur = temperatuur * 1000;			// Converteer millivolt naar tienden van graden Celcius
-	return(temperatuur);
-}
-
 void sendData()
 {
 	union {uint16_t ValInt; unsigned char Bytes[2];} tempInt;
@@ -307,33 +290,6 @@ void testReboot()
 	tx(reboot_count);
 }
 
-void ultrasoon()
-{
-	switch (pingState)
-	{
-		case 0:
-
-			PORTD &= ~(1<<TrigPin);
-			_delay_us(10);
-			PORTD |= (1<<TrigPin);
-			_delay_us(10);
-			PORTD &= ~(1<<TrigPin);
-			pingState++;
-			break;
-		case 1:
-			break;
-		case 2:
-			tx(0);
-			tx(centimeter);
-			pingState++;
-			break;
-		case 3:
-			_delay_us(300);
-			pingState = 0;
-			break;
-	}
-}
-
 union u_type
 {
 	uint32_t IntVar;
@@ -351,6 +307,10 @@ void txtest()
 	tx(txtestbyte.Bytes[1]);
 	tx(txtestbyte.Bytes[2]);
 	tx(txtestbyte.Bytes[3]);
+}
+
+void txLight() {
+	txInt(getLight());
 }
 
 int main()
@@ -373,13 +333,14 @@ int main()
 	SCH_Init_T1();
 
 	/* SCH_Add_Task(&initSensor, 0, 0); */
-	SCH_Add_Task(&sendData, 0, 50);
+	//SCH_Add_Task(&sendData, 0, 50);
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
 	/* SCH_Add_Task(&txtest, 0, 50); */
 	// SCH_Add_Task(&checkRx, 0, 50);
 	/* SCH_Add_Task(&update_leds, 0, 50); */
 	/* SCH_Add_Task(&ultrasoon, 0, 5); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
+	SCH_Add_Task(&txLight, 0, 100);
 
 	SCH_Start();
 	while (1)

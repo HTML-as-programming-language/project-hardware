@@ -67,7 +67,7 @@ void startPacket()
 }
 
 void sendPacket(int command, int payload) {
-	union {uint32_t IntVar; unsigned char Bytes[4]; unsigned int Ints[2];} message;
+	union {uint32_t IntVar; unsigned char Bytes[4]; uint16_t Ints[2];} message;
 	message.Ints[1] = command;
 	message.Ints[0] = payload;
 	tx(message.Bytes[3]);

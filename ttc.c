@@ -272,7 +272,7 @@ void txtest()
 }
 
 void txLight() {
-	txInt(getLight());
+	sendPacket(licht, getLight());
 }
 
 int main()

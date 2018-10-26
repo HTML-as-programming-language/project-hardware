@@ -15,18 +15,13 @@
 volatile uint8_t pingState = 0;
 volatile int centimeter = 0;
 
-#include "ttc.h"
-#include "serial.h"
-#include "sensor.h"
-
 int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden
 int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
 uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
 
-union {
-	uint32_t IntVar;
-	unsigned char Bytes[4];
-} lastMessage;
+#include "ttc.h"
+#include "serial.h"
+#include "sensor.h"
 
 enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
 
@@ -170,12 +165,6 @@ void update_leds()
 	PORTB ^= 0x1;
 }
 
-void startPacket()
-{
-	tx(0xff);
-	tx(0xff);
-	tx(0x00);
-}
 
 void initSensor()
 {
@@ -183,11 +172,6 @@ void initSensor()
 	tx(init);
 	tx(0x00);
 	tx(0x00);
-}
-
-void sendString()
-{
-	txChar("Hello World");
 }
 
 void sendData()
@@ -200,52 +184,31 @@ void sendData()
 	tx(tempInt.Bytes[0]);
 }
 
+void handleRx()
+{                                                                                                                                                                                                                                                                          
+          //leest lastMessage en neemt de bijbehorede acties                                                                                                                                                                                                                 
+          int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
+          int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
+                                                                                                                                                                                                                                                                             
+          switch(command)
+          {                                                                                                                                                                                                                                                                  
+                  case 11:                                                                                                                                                                                                                                                   
+                          tempOn = payload;
+                          break;                                                                                                                                                                                                                                             
+                  case 12:                                                                                                                                                                                                                                                   
+                          tempOff = payload;                                                                                                                                                                                                                                 
+                          break;                                                                                                                                                                                                                                             
+                  case 51:                                                                                                                                                                                                                                                   
+                          setScreen(0xff);                                                                                                                                                                                                                                   
+                          break;                                                                                                                                                                                                                                             
+                  case 52:                                                                                                                                                                                                                                                   
+                          setScreen(0x00);                                                                                                                                                                                                                                   
+        }                                                                                                                                                                                                                                                                  
+ }
+
 void setScreen(uint8_t pos)
 {
 	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
-}
-
-void handleRx()
-{
-	//leest lastMessage en neemt de bijbehorede acties
-	int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
-	int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
-
-	switch(command)
-	{
-		case 11:
-			tempOn = payload;
-			break;
-		case 12:
-			tempOff = payload;
-			break;
-		case 51:
-			setScreen(0xff);
-			break;
-		case 52:
-			setScreen(0x00);
-	}
-}
-union
-{
-	uint16_t IntVar;
-	unsigned char Bytes[2];
-}
-firstInt;
-
-void checkRx()
-{ //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
-	firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-	if (firstInt.IntVar == 0xffff)
-	{ //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-		tx(0x11);
-		lastMessage.Bytes[0] = rx();
-		lastMessage.Bytes[1] = rx();
-		lastMessage.Bytes[2] = rx();
-		lastMessage.Bytes[3] = rx();
-		handleRx();
-	}
 }
 
 void checkScreenPos()

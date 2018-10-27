@@ -15,26 +15,33 @@
 volatile uint8_t pingState = 0;
 volatile int centimeter = 0;
 
-#include "ttc.h"
-#include "serial.h"
-#include "sensor.h"
-
 int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden
 int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat
 uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
 
-union {
-	uint32_t IntVar;
-	unsigned char Bytes[4];
-} lastMessage;
+#include "ttc.h"
+#include "serialTx.h"
+#include "serialRx.h"
+#include "sensor.h"
 
-enum { init = 0x65, temp = 0x66, licht = 0x67, afst = 0x68 };
+enum
+{
+	init = 0x65,
+	temp = 0x66,
+	licht = 0x67,
+	afst = 0x68
+};
+
+union
+{
+	uint16_t ValInt;
+	unsigned char Bytes[2];
+} tempInt;
 
 sTask SCH_tasks_G[SCH_MAX_TASKS];
 void SCH_Dispatch_Tasks(void)
 {
 	unsigned char Index;
-
 
 	for(Index = 0; Index < SCH_MAX_TASKS; Index++)
 	{
@@ -42,8 +49,6 @@ void SCH_Dispatch_Tasks(void)
 		{
 			(*SCH_tasks_G[Index].pTask)();
 			SCH_tasks_G[Index].RunMe -= 1;
-
-
 
 			if(SCH_tasks_G[Index].Period == 0)
 			{
@@ -53,6 +58,13 @@ void SCH_Dispatch_Tasks(void)
 	}
 }
 
+void uart_init()
+{
+	UBRR0H = 0;
+	UBRR0L = UBBRVAL;
+	UCSR0B |= _BV(RXEN0) | _BV(TXEN0);
+	UCSR0C |= _BV(UCSZ00) | _BV(UCSZ01);
+}
 
 unsigned char SCH_Add_Task(void (*pFunction)(), const unsigned int DELAY, const unsigned int PERIOD)
 {
@@ -66,7 +78,6 @@ unsigned char SCH_Add_Task(void (*pFunction)(), const unsigned int DELAY, const 
 
 	if(Index == SCH_MAX_TASKS)
 	{
-
 		return SCH_MAX_TASKS;
 	}
 
@@ -75,7 +86,6 @@ unsigned char SCH_Add_Task(void (*pFunction)(), const unsigned int DELAY, const 
 	SCH_tasks_G[Index].Delay =DELAY;
 	SCH_tasks_G[Index].Period = PERIOD;
 	SCH_tasks_G[Index].RunMe = 0;
-
 
 	return Index;
 }
@@ -170,82 +180,20 @@ void update_leds()
 	PORTB ^= 0x1;
 }
 
-void startPacket()
-{
-	tx(0xff);
-	tx(0xff);
-	tx(0x00);
-}
 
 void initSensor()
 {
-	startPacket();
-	tx(init);
-	tx(0x00);
-	tx(0x00);
-}
-
-void sendString()
-{
-	txChar("Hello World");
+	sendPacket(init, 0);
 }
 
 void sendData()
 {
-	union {uint16_t ValInt; unsigned char Bytes[2];} tempInt;
-	tempInt.ValInt = getTemp(); // meet de temperatuur
-	startPacket();
-	tx(temp); //verteld dat het om het doorgeven van de temperatuur gaat
-	tx(tempInt.Bytes[1]); //geeft de temperatuur door
-	tx(tempInt.Bytes[0]);
+	sendPacket(temp, getTemp());
 }
 
 void setScreen(uint8_t pos)
 {
-	// veranderd de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
-}
-
-void handleRx()
-{
-	//leest lastMessage en neemt de bijbehorede acties
-	int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
-	int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
-
-	switch(command)
-	{
-		case 11:
-			tempOn = payload;
-			break;
-		case 12:
-			tempOff = payload;
-			break;
-		case 51:
-			setScreen(0xff);
-			break;
-		case 52:
-			setScreen(0x00);
-	}
-}
-union
-{
-	uint16_t IntVar;
-	unsigned char Bytes[2];
-}
-firstInt;
-
-void checkRx()
-{ //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
-	firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier word de tweede helft geschreven
-	if (firstInt.IntVar == 0xffff)
-	{ //0xffff betekend dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-		tx(0x11);
-		lastMessage.Bytes[0] = rx();
-		lastMessage.Bytes[1] = rx();
-		lastMessage.Bytes[2] = rx();
-		lastMessage.Bytes[3] = rx();
-		handleRx();
-	}
+	// verandert de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
 }
 
 void checkScreenPos()
@@ -253,11 +201,11 @@ void checkScreenPos()
 	int temp = getTemp();
 	if (temp <= tempOff)
 	{
-		setScreen(0x00); //draai het scherm omhoog
+		setScreen(0x00); //draait het scherm omhoog
 	}
 	else if (temp >= tempOn)
 	{
-		setScreen(0xff); // draai het scherm naar beneden
+		setScreen(0xff); // draait het scherm naar beneden
 	}
 }
 
@@ -290,27 +238,8 @@ void testReboot()
 	tx(reboot_count);
 }
 
-union u_type
-{
-	uint32_t IntVar;
-	unsigned char Bytes[4];
-}
-txtestbyte;
-
-void txtest()
-{
-	txtestbyte.Bytes[0] = rx();
-	txtestbyte.Bytes[1] = rx();
-	txtestbyte.Bytes[2] = rx();
-	txtestbyte.Bytes[3] = rx();
-	tx(txtestbyte.Bytes[0]);
-	tx(txtestbyte.Bytes[1]);
-	tx(txtestbyte.Bytes[2]);
-	tx(txtestbyte.Bytes[3]);
-}
-
 void txLight() {
-	txInt(getLight());
+	sendPacket(licht, getLight());
 }
 
 int main()
@@ -332,15 +261,14 @@ int main()
 	adc_init();
 	SCH_Init_T1();
 
-	/* SCH_Add_Task(&initSensor, 0, 0); */
-	//SCH_Add_Task(&sendData, 0, 50);
+	SCH_Add_Task(&initSensor, 0, 0);
+	SCH_Add_Task(&sendData, 0, 50);
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
-	/* SCH_Add_Task(&txtest, 0, 50); */
-	// SCH_Add_Task(&checkRx, 0, 50);
+	/* SCH_Add_Task(&checkRx, 0, 50); */
 	/* SCH_Add_Task(&update_leds, 0, 50); */
 	/* SCH_Add_Task(&ultrasoon, 0, 5); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
-	SCH_Add_Task(&txLight, 0, 100);
+	/* SCH_Add_Task(&txLight, 0, 100); */
 
 	SCH_Start();
 	while (1)

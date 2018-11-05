@@ -23,6 +23,7 @@ uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = o
 #include "serialTx.h"
 #include "serialRx.h"
 #include "sensor.h"
+#include "servo.h"
 
 enum
 {
@@ -257,6 +258,7 @@ int main()
 	TCNT1 = 0;
 	incReboot();
 	uart_init();
+	servo_init();
 	DDRB = 1 << 0;
 	adc_init();
 	SCH_Init_T1();

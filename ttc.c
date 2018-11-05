@@ -243,6 +243,18 @@ void txLight() {
 	sendPacket(licht, getLight());
 }
 
+uint8_t LEDvalue = 0x00;
+
+void toggleLED() {
+	if (LEDvalue == 0x00) {
+		LEDvalue = 0xff;
+	}
+	else {
+		LEDvalue = 0x00;
+	}
+	servo_set(LEDvalue);
+}
+
 int main()
 {
 	SPH = (RAMEND & 0xFF00) >> 8;
@@ -263,14 +275,15 @@ int main()
 	adc_init();
 	SCH_Init_T1();
 
-	SCH_Add_Task(&initSensor, 0, 0);
-	SCH_Add_Task(&sendData, 0, 50);
+	//SCH_Add_Task(&initSensor, 0, 0);
+	//SCH_Add_Task(&sendData, 0, 50);
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
 	/* SCH_Add_Task(&checkRx, 0, 50); */
 	/* SCH_Add_Task(&update_leds, 0, 50); */
 	/* SCH_Add_Task(&ultrasoon, 0, 5); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
 	/* SCH_Add_Task(&txLight, 0, 100); */
+	SCH_Add_Task(&toggleLED, 0, 50);
 
 	SCH_Start();
 	while (1)

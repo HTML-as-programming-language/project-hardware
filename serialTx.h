@@ -4,12 +4,6 @@ union
 	uint16_t Ints[2];
 } message;
 
-union
-{
-	uint16_t ValInt;
-	unsigned char Bytes[2];
-} MessInt;
-
 void tx( unsigned char data )
 {
 	while ( !( UCSR0A & (1<<UDRE0)) );
@@ -19,10 +13,7 @@ void tx( unsigned char data )
 void txChar(uint8_t message[])
 {
 	for (int c = 0; message[c] != 0; c++)
-	{
 		tx(message[c]);
-	}
-
 }
 
 void startPacket()

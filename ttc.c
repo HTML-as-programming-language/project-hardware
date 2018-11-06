@@ -29,6 +29,7 @@ int manual = 0;
 #include "serialTx.h"
 #include "serialRx.h"
 #include "sensor.h"
+#include "servo.h"
 
 enum
 {
@@ -276,6 +277,18 @@ void tempcheck()
 	sendPacket(licht, bla);
 }
 
+uint8_t LEDvalue = 0x00;
+
+void toggleLED() {
+	if (LEDvalue == 0x00) {
+		LEDvalue = 0xff;
+	}
+	else {
+		LEDvalue = 0x00;
+	}
+	servo_set(LEDvalue);
+}
+
 int main()
 {
 	SPH = (RAMEND & 0xFF00) >> 8;
@@ -291,6 +304,8 @@ int main()
 	TCNT1 = 0;
 	incReboot();
 	uart_init();
+	servo_init();
+
 	DDRB |= (1 << PB0);
 	DDRB |= (1 << PB5);
 	adc_init();
@@ -307,6 +322,7 @@ int main()
 	/* SCH_Add_Task(&checkRx, 0, 50); */
 	/* SCH_Add_Task(&update_leds, 0, 100); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
+	SCH_Add_Task(&toggleLED, 0, 50);
 	/* SCH_Add_Task(&lightTx, 0, 100); */
 
 	SCH_Start();

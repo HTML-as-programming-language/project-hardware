@@ -1,14 +1,22 @@
+void update_leds(int status);
+
+int aa = 0;
+int bb = 0;
+int cc = 0;
+int dd = 0;
+int ee = 0;
+
 union
 {
 	uint32_t IntVar;
 	unsigned char Bytes[4];
-} lastMessage;
+} Data;
 
 union
 {
 	uint16_t IntVar;
 	unsigned char Bytes[2];
-} firstInt;
+} Begin;
 
 unsigned char rx( void )
 {
@@ -18,36 +26,74 @@ unsigned char rx( void )
 
 void handleRx()
 {
-	//leest lastMessage en neemt de bijbehorede acties
-	int command = ((lastMessage.Bytes[0] * 0x100) + lastMessage.Bytes[1]); //het commando (bovenste 16 bits)
-	int payload = ((lastMessage.Bytes[2] * 0x100) + lastMessage.Bytes[3]); //de payload van het bericht
+	//leest Data en neemt de bijbehorede acties
+	int command = ((Data.Bytes[0] * 0x100) + Data.Bytes[1]); //het commando (bovenste 16 bits)
+	int payload = ((Data.Bytes[2] * 0x100) + Data.Bytes[3]); //de payload van het bericht
 	switch(command)
 	{
 		case 11:
 			// tempOn = payload;
+			eeprom_write_word(&tempOn, payload);
 			break;
 		case 12:
 			// tempOff = payload;
+			eeprom_write_word(&tempOff, payload);
 			break;
 		case 51:
 			// setScreen(0xff);
+			update_leds(1);
+			manual = 1;
 			break;
 		case 52:
+			manual = 0;
 			// setScreen(0x00);
+			// update_leds(0);
 			break;
 	}
 }
 
-void checkRx()
-{ //checkt of er een bericht is binnengekomen op rx en schrijft het naar een variabele
-	firstInt.Bytes[0] = rx(); //schrijft het bericht naar de bovenste helft van een int
-	firstInt.Bytes[1] = rx(); //alle berichten bestaan uit 16 bits, hier wordt de tweede helft geschreven
-	if (firstInt.IntVar == 0xffff)
-	{ //0xffff betekent dat het het begin is van een bericht is, de rest van het bericht wordt nu naar een variabele geschreven
-		lastMessage.Bytes[0] = rx();
-		lastMessage.Bytes[1] = rx();
-		lastMessage.Bytes[2] = rx();
-		lastMessage.Bytes[3] = rx();
+void buffer(char data)
+{
+	if (!aa)
+	{
+		Begin.Bytes[0] = data;
+		aa = 1;
+	}
+	else if (!bb)
+	{
+		Begin.Bytes[1] = data;
+		bb = 1;
+
+		if (!(Begin.IntVar == 0xffff))
+		{
+			aa = 0;
+			bb = 0;
+		}
+	}
+	else if (!cc)
+	{
+		Data.Bytes[0] = data;
+		cc = 1;
+	}
+	else if (!dd)
+	{
+		Data.Bytes[1] = data;
+		dd = 1;
+	}
+	else if (!ee)
+	{
+		Data.Bytes[2] = data;
+		ee = 1;
+	}
+	else
+	{
+		Data.Bytes[3] = data;
+
+		aa = 0;
+		bb = 0;
+		cc = 0;
+		dd = 0;
+		ee = 0;
 		handleRx();
 	}
 }

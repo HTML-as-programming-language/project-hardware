@@ -16,7 +16,8 @@ int sensorTest(uint8_t pin) //test de sensor op de gegeven input pin
 	return x;
 }
 
-int getLight() { 
+int getLight()
+{
 	//returned de lichtintensiteit van een LDR in hele procenten
 	int sensorInput = adc_read(1);// LDR04 op pin A1
 	double perc = (double)sensorInput / 1024; //perc = het percentage van lichtintensiteid
@@ -24,7 +25,7 @@ int getLight() {
 	return perc;
 }
 
-void ultrasoon()
+int ultrasoon()
 {
 	switch (pingState)
 	{
@@ -40,8 +41,8 @@ void ultrasoon()
 		case 1:
 			break;
 		case 2:
-			tx(0);
-			tx(centimeter);
+			// tx(0);
+			// tx(centimeter);
 			pingState++;
 			break;
 		case 3:
@@ -49,4 +50,5 @@ void ultrasoon()
 			pingState = 0;
 			break;
 	}
+	return centimeter;
 }

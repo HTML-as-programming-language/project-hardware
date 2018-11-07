@@ -18,11 +18,9 @@ volatile uint8_t centimeter = 0;
 uint8_t tempOn EEMEM = 30;
 uint8_t tempOff EEMEM = 40;
 
-/* int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden */
-/* int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat */
-uint8_t screenPos = 0; // de postie van het zonnescherm. 0x00 = omhoog, 0xff = omlaag
+uint8_t lightOn EEMEM = 50;
+uint8_t lightOff EEMEM = 80;
 
-char data;
 int manual = 0;
 
 #include "ttc.h"
@@ -196,7 +194,7 @@ void update_leds(int status)
 
 void initSensor()
 {
-	sendPacket(init, 0);
+	sendPacket(init, 0b00000011);
 }
 
 void tempTx()
@@ -249,9 +247,9 @@ void autoCheck()
 	/* 	update_leds(1); */
 	/* else if (ultrasoon() > eeprom_read_word(&tempOff) && !manual) */
 	/* 	update_leds(0); */
-	if (ultrasoon() < 30 && !manual)
+	if ((ultrasoon() < eeprom_read_byte(&tempOn) || getLight() < eeprom_read_byte(&lightOn)) && !manual)
 		update_leds(1);
-	else if (ultrasoon() > 40 && !manual)
+	else if (ultrasoon() > eeprom_read_byte(&tempOff) || getLight() < eeprom_read_byte(&lightOn) && !manual)
 		update_leds(0);
 }
 
@@ -293,15 +291,11 @@ int main()
 
 	SCH_Add_Task(&tempTx, 0, 50);
 	SCH_Add_Task(&ultrTx, 0, 50);
+	SCH_Add_Task(&lightTx, 0, 100);
 	SCH_Add_Task(&autoCheck, 0, 10);
-	/* SCH_Add_Task(&tempcheck, 0, 20); */
 
-	/* SCH_Add_Task(&sensorTest, 0, 50); */
-	/* SCH_Add_Task(&checkRx, 0, 50); */
-	/* SCH_Add_Task(&update_leds, 0, 100); */
+	/* SCH_Add_Task(&tempcheck, 0, 20); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
-	/* SCH_Add_Task(&toggleLED, 0, 50); */
-	/* SCH_Add_Task(&lightTx, 0, 100); */
 
 	SCH_Start();
 	while (1)

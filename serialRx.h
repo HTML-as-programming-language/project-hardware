@@ -33,6 +33,12 @@ void handleRx()
 			// tempOff = payload;
 			eeprom_write_byte(&tempOff, payload);
 			break;
+		case 13:
+			eeprom_write_byte(&lightOn, payload);
+			break;
+		case 14:
+			eeprom_write_byte(&lightOff, payload);
+			break;
 		case 51:
 			// setScreen(0xff);
 			update_leds(1);

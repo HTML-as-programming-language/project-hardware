@@ -1,7 +1,7 @@
 union
 {
-	unsigned char Bytes[4];
-	uint16_t Ints[2];
+	unsigned char Bytes[2];
+	uint16_t IntVar;
 } message;
 
 void tx( unsigned char data )
@@ -19,16 +19,11 @@ void txChar(uint8_t message[])
 void startPacket()
 {
 	tx(0xff);
-	tx(0xff);
 }
 
 void sendPacket(int command, int payload)
 {
-	message.Ints[1] = command;
-	message.Ints[0] = payload;
 	startPacket();
-	tx(message.Bytes[3]);
-	tx(message.Bytes[2]);
-	tx(message.Bytes[1]);
-	tx(message.Bytes[0]);
+	tx(command);
+	tx(payload);
 }

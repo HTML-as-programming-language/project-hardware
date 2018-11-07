@@ -8,15 +8,9 @@ int ee = 0;
 
 union
 {
-	uint32_t IntVar;
-	unsigned char Bytes[4];
-} Data;
-
-union
-{
 	uint16_t IntVar;
 	unsigned char Bytes[2];
-} Begin;
+} Data;
 
 unsigned char rx( void )
 {
@@ -27,73 +21,50 @@ unsigned char rx( void )
 void handleRx()
 {
 	//leest Data en neemt de bijbehorede acties
-	int command = ((Data.Bytes[0] * 0x100) + Data.Bytes[1]); //het commando (bovenste 16 bits)
-	int payload = ((Data.Bytes[2] * 0x100) + Data.Bytes[3]); //de payload van het bericht
+	uint8_t command = Data.Bytes[0];
+	uint8_t payload = Data.Bytes[1];
 	switch(command)
 	{
 		case 11:
 			// tempOn = payload;
-			eeprom_write_word(&tempOn, payload);
+			eeprom_write_byte(&tempOn, payload);
 			break;
 		case 12:
 			// tempOff = payload;
-			eeprom_write_word(&tempOff, payload);
+			eeprom_write_byte(&tempOff, payload);
 			break;
 		case 51:
 			// setScreen(0xff);
 			update_leds(1);
-			manual = 1;
 			break;
 		case 52:
-			manual = 0;
 			// setScreen(0x00);
-			// update_leds(0);
+			update_leds(0);
+			break;
+		case 53:
+			manual = payload;
 			break;
 	}
 }
 
-void buffer(char data)
+int id = 0;
+int pid = 0;
+void buffer(uint8_t data)
 {
-	if (!aa)
+	if (data == 0xff)
 	{
-		Begin.Bytes[0] = data;
-		aa = 1;
+		id = 1;
 	}
-	else if (!bb)
+	else if (id)
 	{
-		Begin.Bytes[1] = data;
-		bb = 1;
-
-		if (!(Begin.IntVar == 0xffff))
-		{
-			aa = 0;
-			bb = 0;
-		}
+		id = 0;
+		pid = data;
 	}
-	else if (!cc)
+	else if (pid)
 	{
-		Data.Bytes[0] = data;
-		cc = 1;
-	}
-	else if (!dd)
-	{
+		Data.Bytes[0] = pid;
 		Data.Bytes[1] = data;
-		dd = 1;
-	}
-	else if (!ee)
-	{
-		Data.Bytes[2] = data;
-		ee = 1;
-	}
-	else
-	{
-		Data.Bytes[3] = data;
-
-		aa = 0;
-		bb = 0;
-		cc = 0;
-		dd = 0;
-		ee = 0;
+		pid = 0;
 		handleRx();
 	}
 }

@@ -15,8 +15,8 @@
 volatile uint8_t pingState = 0;
 volatile uint8_t centimeter = 0;
 
-uint16_t tempOn EEMEM = 250;
-uint16_t tempOff EEMEM = 200;
+uint8_t tempOn EEMEM = 30;
+uint8_t tempOff EEMEM = 40;
 
 /* int tempOn = 250; // de temperatuur waarop het zonnescherm omlaag moet worden gedraaid, default is 25,0 graden */
 /* int tempOff = 200; // de temperatuur waarop het zonnescherm omhoog moet worden gedraaid, tempOn en tempOff worden vervangen als er een andere waarde in de eeprom staat */
@@ -36,7 +36,8 @@ enum
 	init = 0x65,
 	temp = 0x66,
 	licht = 0x67,
-	afst = 0x68
+	rolluik = 0x68,
+	afst = 0x69
 };
 
 union
@@ -154,7 +155,6 @@ ISR(PCINT2_vect)
 ISR(TIMER1_OVF_vect)
 {
 	TCCR1B &= ~(1<<CS10);
-	centimeter = -1;
 	pingState = 2;
 }
 
@@ -163,26 +163,19 @@ ISR(TIMER0_COMPA_vect)
 	unsigned char Index;
 	for(Index = 0; Index < SCH_MAX_TASKS; Index++)
 	{
-
 		if(SCH_tasks_G[Index].pTask)
 		{
 			if(SCH_tasks_G[Index].Delay == 0)
 			{
-
 				SCH_tasks_G[Index].RunMe += 1;
-
 				if(SCH_tasks_G[Index].Period)
 				{
-
 					SCH_tasks_G[Index].Delay = SCH_tasks_G[Index].Period;
 					SCH_tasks_G[Index].Delay -= 1;
 				}
 			}
 			else
-			{
-
 				SCH_tasks_G[Index].Delay -= 1;
-			}
 		}
 	}
 }
@@ -190,9 +183,15 @@ ISR(TIMER0_COMPA_vect)
 void update_leds(int status)
 {
 	if(status)
+	{
 		PORTB = 0x1;
+		sendPacket(rolluik, 100);
+	}
 	else
+	{
 		PORTB = 0;
+		sendPacket(rolluik, 0);
+	}
 }
 
 void initSensor()
@@ -213,24 +212,6 @@ void ultrTx()
 void lightTx()
 {
 	sendPacket(licht, getLight());
-}
-
-void setScreen(uint8_t pos)
-{
-	// verandert de positie van het zonnescherm. pos: 0xff = omlaag, 0x00 = omhoog
-}
-
-void checkScreenPos()
-{
-	int temp = getTemp();
-	if (temp <= tempOff)
-	{
-		setScreen(0x00); //draait het scherm omhoog
-	}
-	else if (temp >= tempOn)
-	{
-		setScreen(0xff); // draait het scherm naar beneden
-	}
 }
 
 uint8_t EEMEM eeprombyte=0x10;
@@ -264,29 +245,26 @@ void testReboot()
 
 void autoCheck()
 {
-	if (ultrasoon() < tempOn && !manual)
+	/* if (ultrasoon() < eeprom_read_word(&tempOn) && !manual) */
+	/* 	update_leds(1); */
+	/* else if (ultrasoon() > eeprom_read_word(&tempOff) && !manual) */
+	/* 	update_leds(0); */
+	if (ultrasoon() < 30 && !manual)
 		update_leds(1);
-	else if (ultrasoon() > tempOff && !manual)
+	else if (ultrasoon() > 40 && !manual)
 		update_leds(0);
 }
 
 void tempcheck()
 {
-	uint16_t bla = 0;
-	bla = eeprom_read_word(&tempOn);
+	uint8_t bla = 0;
+	bla = eeprom_read_byte(&tempOn);
+
+	uint8_t blaa = 0;
+	blaa = eeprom_read_byte(&tempOff);
+
 	sendPacket(licht, bla);
-}
-
-uint8_t LEDvalue = 0x00;
-
-void toggleLED() {
-	if (LEDvalue == 0x00) {
-		LEDvalue = 0xff;
-	}
-	else {
-		LEDvalue = 0x00;
-	}
-	servo_set(LEDvalue);
+	sendPacket(licht, blaa);
 }
 
 int main()
@@ -311,18 +289,18 @@ int main()
 	adc_init();
 	SCH_Init_T0();
 
-	SCH_Add_Task(&initSensor, 10, 0);
+	SCH_Add_Task(&initSensor, 0, 0);
 
-	/* SCH_Add_Task(&tempTx, 0, 50); */
-	/* SCH_Add_Task(&ultrTx, 0, 50); */
-	/* SCH_Add_Task(&autoCheck, 0, 5); */
-	SCH_Add_Task(&tempcheck, 0, 20);
+	SCH_Add_Task(&tempTx, 0, 50);
+	SCH_Add_Task(&ultrTx, 0, 50);
+	SCH_Add_Task(&autoCheck, 0, 10);
+	/* SCH_Add_Task(&tempcheck, 0, 20); */
 
 	/* SCH_Add_Task(&sensorTest, 0, 50); */
 	/* SCH_Add_Task(&checkRx, 0, 50); */
 	/* SCH_Add_Task(&update_leds, 0, 100); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
-	SCH_Add_Task(&toggleLED, 0, 50);
+	/* SCH_Add_Task(&toggleLED, 0, 50); */
 	/* SCH_Add_Task(&lightTx, 0, 100); */
 
 	SCH_Start();

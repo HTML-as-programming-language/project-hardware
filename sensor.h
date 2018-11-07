@@ -41,8 +41,6 @@ int ultrasoon()
 		case 1:
 			break;
 		case 2:
-			// tx(0);
-			// tx(centimeter);
 			pingState++;
 			break;
 		case 3:

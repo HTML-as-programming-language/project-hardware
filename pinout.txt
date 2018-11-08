@@ -1,9 +1,9 @@
 Inputs:
 A0:   Temperatuursensor
 A1:   Lichtsensor
+2:    Echo ultrasoon
 
 Outputs:
-2:    Echo ultrasoon
 3:    Trigger ultrasoon
 8:    Led rolluik open
 9:    Led rolluik dicht

@@ -8,7 +8,6 @@
 #define BAUD 9600
 #define UBBRVAL F_CPU/16/BAUD-1
 
-#define LEDPin PIND5
 #define TrigPin PIND3
 #define EchoPin PIND2
 
@@ -313,7 +312,7 @@ int main()
 	PCICR = (1<<PCIE2);
 	PCMSK2 = (1<<PCINT18);
 
-	DDRD = (1<<TrigPin) | (1<<LEDPin);
+	DDRD = (1<<TrigPin);
 	TCNT1 = 0;
 	incReboot();
 	uart_init();

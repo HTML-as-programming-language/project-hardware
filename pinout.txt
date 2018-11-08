@@ -1,4 +1,11 @@
 Inputs:
-A0:    Temperatuursensor
-A1:    Lichtsensor
-A2:    Luchtvochtigheid Sensor
+A0:   Temperatuursensor
+A1:   Lichtsensor
+
+Outputs:
+2:    Echo ultrasoon
+3:    Trigger ultrasoon
+8:    Led rolluik open
+9:    Led rolluik dicht
+10:   Led rolluik open/dicht aan het gaan
+11:   Servo aansturing

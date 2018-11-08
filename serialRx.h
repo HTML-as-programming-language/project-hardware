@@ -40,11 +40,9 @@ void handleRx()
 			break;
 		case 51:
 			update_leds(1);
-			update_servo(eeprom_read_byte(&servoHoog));
 			break;
 		case 52:
 			update_leds(0);
-			update_servo(eeprom_read_byte(&servoLaag));
 			break;
 		case 53:
 			manual = payload;

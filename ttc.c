@@ -192,6 +192,7 @@ void update_leds(int status)
 				PORTB ^= 0xfc;
 				_delay_ms(100);
 			}
+			update_servo(eeprom_read_byte(&servoHoog));
 		}
 		sendPacket(rolluik, 100);
 	}
@@ -206,6 +207,7 @@ void update_leds(int status)
 				PORTB ^= 0xfc;
 				_delay_ms(100);
 			}
+			update_servo(eeprom_read_byte(&servoLaag));
 		}
 		sendPacket(rolluik, 0);
 	}

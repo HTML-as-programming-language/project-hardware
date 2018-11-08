@@ -1,10 +1,5 @@
 void update_leds(int status);
-
-int aa = 0;
-int bb = 0;
-int cc = 0;
-int dd = 0;
-int ee = 0;
+void update_servo(uint8_t status);
 
 union
 {
@@ -37,11 +32,19 @@ void handleRx()
 		case 14:
 			eeprom_write_byte(&lightOff, payload);
 			break;
+		case 15:
+			eeprom_write_byte(&servoLaag, payload);
+			break;
+		case 16:
+			eeprom_write_byte(&servoHoog, payload);
+			break;
 		case 51:
 			update_leds(1);
+			update_servo(eeprom_read_byte(&servoHoog));
 			break;
 		case 52:
 			update_leds(0);
+			update_servo(eeprom_read_byte(&servoLaag));
 			break;
 		case 53:
 			manual = payload;

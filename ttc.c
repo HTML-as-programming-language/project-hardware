@@ -17,9 +17,10 @@ volatile uint8_t centimeter = 0;
 
 uint8_t tempOn EEMEM = 30;
 uint8_t tempOff EEMEM = 40;
-
 uint8_t lightOn EEMEM = 50;
 uint8_t lightOff EEMEM = 80;
+uint8_t servoLaag EEMEM = 35;
+uint8_t servoHoog EEMEM = 70;
 
 int manual = 0;
 
@@ -291,6 +292,14 @@ void tempcheck()
 	sendPacket(licht, blaa);
 }
 
+void servo()
+{
+	update_servo(35);
+	_delay_ms(1000);
+	update_servo(70);
+	_delay_ms(1000);
+}
+
 int main()
 {
 	SPH = (RAMEND & 0xFF00) >> 8;
@@ -306,11 +315,10 @@ int main()
 	TCNT1 = 0;
 	incReboot();
 	uart_init();
-	servo_init();
 
-	DDRB |= (1 << PB0);
-	DDRB |= (1 << PB1);
-	DDRB |= (1 << PB2);
+	DDRB |= (1 << PB0); // led rolluik open
+	DDRB |= (1 << PB1); // led rolluik dicht
+	DDRB |= (1 << PB2); // led rolluik open/dicht aan het gaan
 	adc_init();
 	SCH_Init_T0();
 
@@ -321,6 +329,7 @@ int main()
 	SCH_Add_Task(&lightTx, 0, 50);
 	SCH_Add_Task(&autoCheck, 0, 10);
 
+	/* SCH_Add_Task(&servo, 0, 100); */
 	/* SCH_Add_Task(&tempcheck, 0, 20); */
 	/* SCH_Add_Task(&blaleds, 0, 200); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */

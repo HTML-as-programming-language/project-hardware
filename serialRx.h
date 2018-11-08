@@ -26,11 +26,9 @@ void handleRx()
 	switch(command)
 	{
 		case 11:
-			// tempOn = payload;
 			eeprom_write_byte(&tempOn, payload);
 			break;
 		case 12:
-			// tempOff = payload;
 			eeprom_write_byte(&tempOff, payload);
 			break;
 		case 13:
@@ -40,11 +38,9 @@ void handleRx()
 			eeprom_write_byte(&lightOff, payload);
 			break;
 		case 51:
-			// setScreen(0xff);
 			update_leds(1);
 			break;
 		case 52:
-			// setScreen(0x00);
 			update_leds(0);
 			break;
 		case 53:

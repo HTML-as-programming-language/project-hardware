@@ -177,17 +177,35 @@ ISR(TIMER0_COMPA_vect)
 		}
 	}
 }
-
+int aan = 1;
 void update_leds(int status)
 {
 	if(status)
 	{
 		PORTB = 0x1;
+		if(!aan)
+		{
+			aan = 1;
+			for (int i = 0; i < 10; ++i)
+			{
+				PORTB ^= 0xfc;
+				_delay_ms(100);
+			}
+		}
 		sendPacket(rolluik, 100);
 	}
 	else
 	{
-		PORTB = 0;
+		PORTB = 0x2;
+		if(aan)
+		{
+			aan = 0;
+			for (int i = 0; i < 10; ++i)
+			{
+				PORTB ^= 0xfc;
+				_delay_ms(100);
+			}
+		}
 		sendPacket(rolluik, 0);
 	}
 }
@@ -253,6 +271,14 @@ void autoCheck()
 		update_leds(0);
 }
 
+void blaleds()
+{
+	update_leds(1);
+	_delay_ms(1000);
+	update_leds(0);
+	_delay_ms(1000);
+}
+
 void tempcheck()
 {
 	uint8_t bla = 0;
@@ -283,7 +309,8 @@ int main()
 	servo_init();
 
 	DDRB |= (1 << PB0);
-	DDRB |= (1 << PB5);
+	DDRB |= (1 << PB1);
+	DDRB |= (1 << PB2);
 	adc_init();
 	SCH_Init_T0();
 
@@ -291,10 +318,11 @@ int main()
 
 	SCH_Add_Task(&tempTx, 0, 50);
 	SCH_Add_Task(&ultrTx, 0, 50);
-	SCH_Add_Task(&lightTx, 0, 100);
+	SCH_Add_Task(&lightTx, 0, 50);
 	SCH_Add_Task(&autoCheck, 0, 10);
 
 	/* SCH_Add_Task(&tempcheck, 0, 20); */
+	/* SCH_Add_Task(&blaleds, 0, 200); */
 	/* SCH_Add_Task(&testReboot, 0, 100); */
 
 	SCH_Start();

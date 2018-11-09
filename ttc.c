@@ -192,8 +192,8 @@ void update_leds(int status)
 				_delay_ms(100);
 			}
 			update_servo(eeprom_read_byte(&servoHoog));
+			sendPacket(rolluik, 100);
 		}
-		sendPacket(rolluik, 100);
 	}
 	else
 	{
@@ -207,8 +207,8 @@ void update_leds(int status)
 				_delay_ms(100);
 			}
 			update_servo(eeprom_read_byte(&servoLaag));
+			sendPacket(rolluik, 0);
 		}
-		sendPacket(rolluik, 0);
 	}
 }
 
@@ -269,7 +269,7 @@ void autoCheck()
 	/* 	update_leds(0); */
 	if ((ultrasoon() < eeprom_read_byte(&tempOn) || getLight() < eeprom_read_byte(&lightOn)) && !manual)
 		update_leds(1);
-	else if (ultrasoon() > eeprom_read_byte(&tempOff) || getLight() < eeprom_read_byte(&lightOn) && !manual)
+	else if ((ultrasoon() > eeprom_read_byte(&tempOff) || getLight() < eeprom_read_byte(&lightOff)) && !manual)
 		update_leds(0);
 }
 

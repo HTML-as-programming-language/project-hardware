@@ -263,13 +263,9 @@ void testReboot()
 
 void autoCheck()
 {
-	/* if (ultrasoon() < eeprom_read_word(&tempOn) && !manual) */
-	/* 	update_leds(1); */
-	/* else if (ultrasoon() > eeprom_read_word(&tempOff) && !manual) */
-	/* 	update_leds(0); */
-	if ((ultrasoon() < eeprom_read_byte(&tempOn) || getLight() < eeprom_read_byte(&lightOn)) && !manual)
+	if ((getTemp() < eeprom_read_byte(&tempOn) || getLight() < eeprom_read_byte(&lightOn)) && !manual)
 		update_leds(1);
-	else if ((ultrasoon() > eeprom_read_byte(&tempOff) || getLight() < eeprom_read_byte(&lightOff)) && !manual)
+	else if ((getTemp() > eeprom_read_byte(&tempOff) || getLight() > eeprom_read_byte(&lightOff)) && !manual)
 		update_leds(0);
 }
 

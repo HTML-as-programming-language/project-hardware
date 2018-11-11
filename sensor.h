@@ -7,6 +7,7 @@ int getTemp()
 	temperatuur = temperatuur * 5;              // vermenigvuldig met 5V om het voltage te verkrijgen
 	temperatuur = temperatuur - 0.5;            // Haal de offset eraf
 	temperatuur = temperatuur * 1000;			// Converteer millivolt naar tienden van graden Celcius
+	temperatuur = temperatuur - 50;
 	return(temperatuur);
 }
 

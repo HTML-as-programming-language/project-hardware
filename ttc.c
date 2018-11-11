@@ -9,7 +9,9 @@
 #define UBBRVAL F_CPU/16/BAUD-1
 
 #define TrigPin PIND3
-#define EchoPin PIND2
+#define EchoPin PIND4
+
+#define intpin PIND2
 
 volatile uint8_t pingState = 0;
 volatile uint8_t centimeter = 0;
@@ -127,6 +129,14 @@ void SCH_Init_T0(void)
 void SCH_Start(void)
 {
 	sei();
+}
+
+int bla = 1;
+ISR(INT0_vect)
+{
+	update_leds(bla);
+	bla ^= 1;
+	_delay_ms(500);
 }
 
 ISR(USART_RX_vect)
@@ -318,6 +328,8 @@ int main()
 	DDRB |= (1 << PB2); // led rolluik open/dicht aan het gaan
 	adc_init();
 	SCH_Init_T0();
+
+	EIMSK |= 1 << INT0; // zet de interrupt pin aan op D2
 
 	SCH_Add_Task(&initSensor, 0, 0);
 

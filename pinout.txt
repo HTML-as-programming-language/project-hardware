@@ -1,7 +1,8 @@
 Inputs:
 A0:   Temperatuursensor
 A1:   Lichtsensor
-2:    Echo ultrasoon
+2:    Externe interrupt voor infrarood sensor
+4:    Echo ultrasoon
 
 Outputs:
 3:    Trigger ultrasoon

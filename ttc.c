@@ -11,8 +11,6 @@
 #define TrigPin PIND3
 #define EchoPin PIND4
 
-#define intpin PIND2
-
 volatile uint8_t pingState = 0;
 volatile uint8_t centimeter = 0;
 
@@ -316,7 +314,7 @@ int main()
 	TIMSK1 = (1<<TOIE1);
 
 	PCICR = (1<<PCIE2);
-	PCMSK2 = (1<<PCINT18);
+	PCMSK2 = (1<<PCINT20);
 
 	DDRD = (1<<TrigPin);
 	TCNT1 = 0;
